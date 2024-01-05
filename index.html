@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<script src="./dist//index.js"></script>
+<body>
+
+
+
+
+
+    <button target-key = "btn">有监听</button>
+    <button>没有监听</button>
+    <script>
+        new Tracker({
+            requestUrl:"http://localhost:9000/tracker",
+            historyTracker:true,
+            domTracker:true,
+            jsError:true
+        })
+        
+    </script>
+
+</body>
+</html>
