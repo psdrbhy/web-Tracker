@@ -13,16 +13,27 @@
 
 
     <button target-key = "btn">有监听</button>
+    
     <button>没有监听</button>
+    <div id="container">
+        <div class="content">
+            <input type="button" value="点击抛出js错误" onclick="errorClick()">
+        </div>
+
+    </div>
     <script>
         new Tracker({
-            requestUrl:"http://localhost:9000/tracker",
-            historyTracker:true,
+            requestUrl:"http://localhost:3000/curd",
+            historyTracker:false,
             domTracker:true,
             jsError:true
         })
-        
-    </script>
+
+        function errorClick(){
+            console.log('报错')
+            console.log(t)
+        }
+    </script>   
 
 </body>
 </html>

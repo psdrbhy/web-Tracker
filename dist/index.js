@@ -25,11 +25,20 @@
     // window.addEventListener
     // createHistoryEvent("pushState")
 
+    function utcFormat(time) {
+        var date = new Date(time), year = date.getFullYear(), month = date.getMonth() + 1 > 9 ? date.getMonth() + 1 : '0' + (date.getMonth() + 1), day = date.getDate() > 9 ? date.getDate() : '0' + date.getDate(), hour = date.getHours() > 9 ? date.getHours() : '0' + date.getHours(), minutes = date.getMinutes() > 9 ? date.getMinutes() : '0' + date.getMinutes(), seconds = date.getSeconds() > 9 ? date.getSeconds() : '0' + date.getSeconds();
+        var res = year + '-' + month + '-' + day + ' ' + hour + ':' + minutes + ':' + seconds;
+        return res;
+    }
+
+    // import lastEvent from "../utils/lastevent";
     // 需要监听的事件
     const MouseEventList = ['click', 'dblclick', 'contextmenu', 'mousedown', 'mouseup', 'mouseenter', 'mouseout', 'mouseover'];
     class Tracker {
+        // public lastEvent: Event;
         constructor(options) {
             this.data = Object.assign(this.initDef(), options); //把options复制到this.initDef中去，有相同的就会覆盖
+            // this.lastEvent = lastEvent()
             this.installTracker();
         }
         //进行一个默认设置
@@ -85,7 +94,7 @@
          */
         reportTracker(data) {
             //因为第二个参数BodyInit没有json格式
-            const params = Object.assign(this.data, data, { time: new Date().getTime() });
+            const params = Object.assign(this.data, data, { time: utcFormat(new Date().getTime()) });
             let headers = {
                 type: 'application/x-www-form-urlencoded'
             };
@@ -102,7 +111,8 @@
                     if (targetKey) {
                         this.reportTracker({
                             event,
-                            targetKey
+                            targetKey,
+                            // selector:e? getSelector(e) : '' //代表最后一个操作的元素
                         });
                     }
                 });
@@ -118,10 +128,18 @@
          */
         errorEvent() {
             window.addEventListener("error", (event) => {
+                // let lastEvent = this.lastEvent;
+                // console.log(lastEvent)
+                console.log(event);
                 this.reportTracker({
-                    event: "error",
+                    kind: 'stability',
+                    eventType: "JsError",
                     targetKey: "message",
-                    message: event.message
+                    message: event.message,
+                    fileName: event.filename,
+                    position: `line:${event.lineno},col:${event.colno}`,
+                    stack: this.getLine(event.error.stack),
+                    // selector:
                 });
             });
         }
@@ -132,7 +150,8 @@
             window.addEventListener("unhandledrejection", (event) => {
                 event.promise.catch(error => {
                     this.reportTracker({
-                        event: "promiseError",
+                        kind: 'stability',
+                        eventType: "PromiseError",
                         targetKey: "message",
                         message: error
                     });
@@ -158,6 +177,14 @@
          */
         setExtra(extra) {
             this.data.extra = extra;
+        }
+        /**
+         * 拼接stack
+         * @param stack
+         * @returns
+         */
+        getLine(stack) {
+            return stack.split('\n').slice(1).map(item => item.replace(/^\s+at\s+/g, "")).join('^');
         }
     }
 

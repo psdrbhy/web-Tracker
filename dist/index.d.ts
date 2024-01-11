@@ -2,7 +2,7 @@
  * @requestUrl 接口地址
  * @historyTracker history上报
  * @hashTracker hash上报
- * @domTracker 携带Tracker-key 点击事件上报
+ * @domTracker 携带Tracker-key的点击事件上报
  * @sdkVersion 版本
  * @extra 透传字段
  * @jsError js和promise 报错异常上报
@@ -41,7 +41,9 @@ declare class Tracker {
     private targetKeyReport;
     private jsError;
     /**
-     * 监听普通错误error
+     * 监听普通js错误
+     *
+     *
      */
     private errorEvent;
     /**
@@ -62,6 +64,12 @@ declare class Tracker {
      * @param extra 透传字段
      */
     setExtra<T extends DefaultOptions['extra']>(extra: T): void;
+    /**
+     * 拼接stack
+     * @param stack
+     * @returns
+     */
+    getLine(stack: string): string;
 }
 
 export { Tracker as default };

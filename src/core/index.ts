@@ -1,5 +1,7 @@
 import { DefaultOptions, TrackerConfig, Options } from "../types/index";
 import { createHistoryEvent } from "../utils/pv";
+import { utcFormat } from '../utils/timeFormat'
+// import lastEvent from "../utils/lastevent";
 
 // 需要监听的事件
 
@@ -7,8 +9,10 @@ const MouseEventList: string[] = ['click', 'dblclick', 'contextmenu', 'mousedown
 
 export default class Tracker{
     public data: Options; //为什么这里没有传requestUrl没有报错
-    constructor(options:Options) {
+    // public lastEvent: Event;
+    constructor(options: Options) {
         this.data = Object.assign(this.initDef(), options);//把options复制到this.initDef中去，有相同的就会覆盖
+        // this.lastEvent = lastEvent()
         this.installTracker()
     }
     //进行一个默认设置
@@ -56,6 +60,7 @@ export default class Tracker{
             this.targetKeyReport()
         }
         if (this.data.jsError) {
+
             this.jsError()
         }
     }
@@ -65,7 +70,8 @@ export default class Tracker{
      */
     private reportTracker<T>(data: T) {
         //因为第二个参数BodyInit没有json格式
-        const params = Object.assign(this.data, data, { time: new Date().getTime() });
+        const params = Object.assign(this.data, data, { time: utcFormat(new Date().getTime()) });
+
         let headers = {
             type:'application/x-www-form-urlencoded'
         }
@@ -85,7 +91,8 @@ export default class Tracker{
                 if (targetKey) {
                     this.reportTracker({
                         event,
-                        targetKey
+                        targetKey,
+                        // selector:e? getSelector(e) : '' //代表最后一个操作的元素
                     })
                 }
             })
@@ -93,19 +100,30 @@ export default class Tracker{
     }
     //收集一下
     private jsError() {
+
         this.errorEvent()
         this.promiseError()
     }
 
     /**
-     * 监听普通错误error
+     * 监听普通js错误
+     * 
+     * 
      */
     private errorEvent() {
         window.addEventListener("error", (event) => {
+            // let lastEvent = this.lastEvent;
+            // console.log(lastEvent)
+            console.log(event)
             this.reportTracker({
-                event:"error",
+                kind:'stability',   
+                eventType:"JsError",
                 targetKey: "message",
-                message:event.message
+                message: event.message,
+                fileName:event.filename,
+                position: `line:${event.lineno},col:${event.colno}`,
+                stack: this.getLine(event.error.stack),
+                // selector:
             })
         })
     }
@@ -116,7 +134,8 @@ export default class Tracker{
         window.addEventListener("unhandledrejection", (event) => {
             event.promise.catch(error => {
                 this.reportTracker({
-                    event:"promiseError",
+                    kind:'stability',
+                    eventType:"PromiseError",
                     targetKey: "message",
                     message:error
                 })
@@ -145,5 +164,12 @@ export default class Tracker{
     public setExtra<T extends DefaultOptions['extra']>(extra:T) {
         this.data.extra = extra
     }
-
+    /**
+     * 拼接stack
+     * @param stack 
+     * @returns 
+     */
+    public getLine(stack:string) {
+        return stack.split('\n').slice(1).map(item=>item.replace(/^\s+at\s+/g,"")).join('^')
+    }
 }
