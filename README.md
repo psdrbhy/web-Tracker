@@ -1,11 +1,11 @@
-一个前端监控性能工具
+#### 一个前端监控性能工具
 
 使用方式：
-··· 
+```
 npm i aquan-tracker
+```
 
-
-自定义开启需要的监控指标
+#### 自定义开启需要的监控指标
 
  * @requestUrl 接口地址 必传
  * @historyTracker history上报
