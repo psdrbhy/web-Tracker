@@ -1,7 +1,7 @@
 一个前端监控性能工具
 
 使用方式：
-···
+··· 
 npm i aquan-tracker
 
 
@@ -15,6 +15,7 @@ npm i aquan-tracker
  * @extra 透传字段
  * @jsError js和promise 报错异常上报
 
+``` 
 eg:
 new Tracker({
     requestUrl:"http://localhost:3000/curd",
@@ -22,3 +23,4 @@ new Tracker({
     domTracker:true,
     jsError:true
 })
+``` 
