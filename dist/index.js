@@ -8,12 +8,6 @@
     (function (TrackerConfig) {
         TrackerConfig["version"] = "1.0.0";
     })(TrackerConfig || (TrackerConfig = {}));
-    // export interface data{
-    //     title:string,
-    //     url: Location
-    //     timestamp:Date
-    //     userAgent:string
-    // }
 
     // 重写pushState和replaceState:因为history监听不到
     const createHistoryEvent = (type) => {
@@ -37,14 +31,46 @@
         return res;
     }
 
-    // import lastEvent from "../utils/lastevent";
+    function getAliyun(project, host, logstore, result) {
+        let url = `http://${project}.${host}/logstores/${logstore}/track`;
+        //因为阿里云要求必须都是字符串类型
+        console.log(result);
+        for (const key in result) {
+            //处理对象类型
+            if (typeof result[key] == 'object') {
+                result[key] = JSON.stringify(result[key]);
+            }
+            else {
+                result[key] = `${result[key]}`;
+            }
+        }
+        let body = JSON.stringify({
+            __logs__: [result]
+        });
+        let xhr = new XMLHttpRequest;
+        xhr.open('post', url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('x-log-apiversion', '0.6.0');
+        xhr.setRequestHeader('x-log-bodyrawsize', `${result.length}`);
+        xhr.onload = function (res) {
+            console.log("success");
+            console.log(xhr.response);
+        };
+        xhr.onerror = function (error) {
+            console.log("error");
+            console.log(error);
+        };
+        xhr.send(body);
+    }
+
     // 需要监听的事件
     const MouseEventList = ['click', 'dblclick', 'contextmenu', 'mousedown', 'mouseup', 'mouseenter', 'mouseout', 'mouseover'];
     class Tracker {
         // public lastEvent: Event;
-        constructor(options) {
+        constructor(options, aliyunOptions) {
             this.data = Object.assign(this.initDef(), options); //把options复制到this.initDef中去，有相同的就会覆盖
             // this.lastEvent = lastEvent()
+            this.aliyunOptions = aliyunOptions;
             this.installTracker();
         }
         //进行一个默认设置
@@ -110,34 +136,12 @@
             };
             let blob = new Blob([JSON.stringify(params)], headers); //转化成二进制然后进行new一个blob对象
             navigator.sendBeacon(this.data.requestUrl, blob);
-            // 发送到阿里云中去
-            let project = 'aquan-tracker';
-            let host = 'cn-guangzhou.log.aliyuncs.com';
-            let logstoreName = 'aquan-logstore';
-            let url = `http://${project}.${host}/logstores/${logstoreName}/track`;
-            let extraData = this.getExtraData();
-            let result = Object.assign(Object.assign({}, data), extraData);
-            for (const key in result) {
-                if (typeof result[key] == 'number') {
-                    result[key] = `${result[key]}`;
-                }
+            // 如果存在发送到阿里云中去
+            if (this.aliyunOptions) {
+                let { project, host, logstore } = this.aliyunOptions;
+                console.log(params);
+                getAliyun(project, host, logstore, params);
             }
-            console.log(result);
-            let xhr = new XMLHttpRequest;
-            let body = JSON.stringify(result);
-            xhr.open('post', url, true);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.setRequestHeader('x-log-apiversion', '0.6.0');
-            xhr.setRequestHeader('x-log-bodyrawsize', `${body.length}`);
-            xhr.onload = function (res) {
-                console.log("success");
-                console.log(xhr.response);
-            };
-            xhr.onerror = function (error) {
-                console.log("error");
-                console.log(error);
-            };
-            xhr.send(body);
         }
         //DOM事件上报：分出来写
         targetKeyReport() {
@@ -235,10 +239,6 @@
                 // url: Location.url,
                 timestamp: Date.now(),
                 // userAgent:userAgent.parse(navigator,userAgent).name
-                __topic__: "topic",
-                "__source__": "source",
-                "__logs__": [],
-                __tags__: "fdsa"
             };
         }
     }

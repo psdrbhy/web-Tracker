@@ -16,7 +16,7 @@ export interface DefaultOptions {
     sdkVersion: string | number,
     extra: Record<string, any> | undefined,
     jsError: boolean,
-    trackerParams: ErrorParams
+    trackerParams: ErrorParams | string
 }
 export interface Options extends Partial<DefaultOptions> {//把上面的一些变成非必填
     requestUrl: string,//只有这个是必须要传
@@ -52,10 +52,9 @@ export interface ErrorParams extends Partial<DefaultErrorParams<any>> {
     kind: string,
 }
 
-
-// export interface data{
-//     title:string,
-//     url: Location
-//     timestamp:Date
-//     userAgent:string
-// }
+// 定义阿里云日志需要的参数
+export interface aliyunParams{
+    project: string,
+    host: string,
+    logstore:string
+}

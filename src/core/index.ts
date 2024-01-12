@@ -1,18 +1,18 @@
-import { DefaultOptions, TrackerConfig, Options, ErrorParams} from "../types/index";
+import { DefaultOptions, TrackerConfig, Options, ErrorParams, aliyunParams } from "../types/index";
 import { createHistoryEvent } from "../utils/pv";
 import { utcFormat } from '../utils/timeFormat'
-// import lastEvent from "../utils/lastevent";
-
+import getAliyun from '../utils/aliyun'
 // 需要监听的事件
 
 const MouseEventList: string[] = ['click', 'dblclick', 'contextmenu', 'mousedown', 'mouseup', 'mouseenter', 'mouseout', 'mouseover']
-
 export default class Tracker {
-    public data: Options; //为什么这里没有传requestUrl没有报错
+    public data: Options;
+    public aliyunOptions?: aliyunParams
     // public lastEvent: Event;
-    constructor(options: Options) {
+    constructor(options: Options, aliyunOptions?: aliyunParams) {
         this.data = Object.assign(this.initDef(), options);//把options复制到this.initDef中去，有相同的就会覆盖
         // this.lastEvent = lastEvent()
+        this.aliyunOptions = aliyunOptions
         this.installTracker()
     }
     //进行一个默认设置
@@ -80,36 +80,13 @@ export default class Tracker {
         }
         let blob = new Blob([JSON.stringify(params)], headers); //转化成二进制然后进行new一个blob对象
         navigator.sendBeacon(this.data.requestUrl, blob);
-        // 发送到阿里云中去
-        let project = 'aquan-tracker'
-        let host = 'cn-guangzhou.log.aliyuncs.com'
-        let logstoreName = 'aquan-logstore'
-        let url = `http://${project}.${host}/logstores/${logstoreName}/track`
-        let extraData = this.getExtraData()
-        let result:any = {...data,...extraData}
+        // 如果存在发送到阿里云中去
+        if (this.aliyunOptions) {
+            let { project, host, logstore } = this.aliyunOptions
+            console.log(params)
+            getAliyun(project, host, logstore, params)
+        }
 
-        for (const key in result) {
-            if (typeof result[key] == 'number') {
-                result[key]= `${result[key]}` as any
-                
-            }
-        }
-        console.log(result)
-        let xhr = new XMLHttpRequest;
-        let body = JSON.stringify(result) 
-        xhr.open('post', url, true)
-        xhr.setRequestHeader('Content-Type', 'application/json')
-        xhr.setRequestHeader('x-log-apiversion', '0.6.0')
-        xhr.setRequestHeader('x-log-bodyrawsize', `${body.length}`)   
-        xhr.onload = function (res) {
-            console.log("success")
-            console.log(xhr.response)
-        }
-        xhr.onerror = function (error) {
-            console.log("error")
-            console.log(error)
-        }
-        xhr.send(body)
 
     }
 
@@ -209,19 +186,15 @@ export default class Tracker {
     public getLine(stack: string) {
         return stack.split('\n').slice(1).map(item => item.replace(/^\s+at\s+/g, "")).join('^')
     }
-    
+
 
     public getExtraData() {
-     
+
         return {
             title: document.title,
             // url: Location.url,
             timestamp: Date.now(),
             // userAgent:userAgent.parse(navigator,userAgent).name
-            __topic__: "topic",
-            "__source__": "source",
-            "__logs__": [],
-            __tags__:"fdsa"
         }
     }
 }

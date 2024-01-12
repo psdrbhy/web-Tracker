@@ -16,7 +16,7 @@ interface DefaultOptions {
     sdkVersion: string | number;
     extra: Record<string, any> | undefined;
     jsError: boolean;
-    trackerParams: ErrorParams;
+    trackerParams: ErrorParams | string;
 }
 interface Options extends Partial<DefaultOptions> {
     requestUrl: string;
@@ -43,10 +43,16 @@ interface DefaultErrorParams<T> {
 interface ErrorParams extends Partial<DefaultErrorParams<any>> {
     kind: string;
 }
+interface aliyunParams {
+    project: string;
+    host: string;
+    logstore: string;
+}
 
 declare class Tracker {
     data: Options;
-    constructor(options: Options);
+    aliyunOptions?: aliyunParams;
+    constructor(options: Options, aliyunOptions?: aliyunParams);
     private initDef;
     /**
      * 事件捕获器
@@ -95,10 +101,6 @@ declare class Tracker {
     getExtraData(): {
         title: string;
         timestamp: number;
-        __topic__: string;
-        __source__: string;
-        __logs__: never[];
-        __tags__: string;
     };
 }
 

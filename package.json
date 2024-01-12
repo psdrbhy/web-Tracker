@@ -4,15 +4,17 @@
   "description": "一个前端监控SDK",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
-  "browser":"dist/index.js",
+  "browser": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build":"rollup -c -w"
+    "build": "rollup -c -w"
   },
   "keywords": [
     "前端监控"
   ],
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "author": "aquan",
   "license": "ISC",
   "devDependencies": {
@@ -20,5 +22,8 @@
     "rollup-plugin-dts": "^6.1.0",
     "rollup-plugin-typescript2": "^0.36.0",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@aliyun-sls/web-track-browser": "^0.3.4"
   }
 }
