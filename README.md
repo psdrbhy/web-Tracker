@@ -1,9 +1,4 @@
-#### 一个前端监控性能工具
-
-使用方式：
-```
-npm i aquan-tracker
-```
+#### 前端监控性能工具SDK
 
 #### 自定义开启需要的监控指标
 可接入自己后台或者使用阿里云的日志服务SLS进行监控
@@ -20,6 +15,14 @@ npm i aquan-tracker
  * @host            所在地域的服务入口。例如cn-hangzhou.log.aliyuncs.com
  * @logstore        Logstore名称
 
+
+#### 使用方式
+下载依赖：
+```
+npm i aquan-tracker
+```
+
+在项目中进行配置
 ``` 
 eg:
   new Tracker({
