@@ -16,9 +16,32 @@ interface DefaultOptions {
     sdkVersion: string | number;
     extra: Record<string, any> | undefined;
     jsError: boolean;
+    trackerParams: ErrorParams;
 }
 interface Options extends Partial<DefaultOptions> {
     requestUrl: string;
+}
+/**
+ * @kind 监听大类
+ * @errorType 监听大类
+ * @kind 监听大类
+ * @kind 监听大类
+ * @kind 监听大类
+
+ */
+interface DefaultErrorParams<T> {
+    kind: string;
+    trackerType: string | undefined;
+    targetKey: string | undefined;
+    message: string | undefined;
+    fileName: string | undefined;
+    position: string | undefined;
+    stack: string | undefined;
+    data: T;
+    event: string | undefined;
+}
+interface ErrorParams extends Partial<DefaultErrorParams<any>> {
+    kind: string;
 }
 
 declare class Tracker {
@@ -43,7 +66,6 @@ declare class Tracker {
     /**
      * 监听普通js错误
      *
-     *
      */
     private errorEvent;
     /**
@@ -53,7 +75,7 @@ declare class Tracker {
     /**
      * 手动上报
      */
-    setTracker<T>(data: T): void;
+    setTracker<T extends ErrorParams>(data: T): void;
     /**
      * 用来设置用户id
      * @param uuid 用户id
@@ -70,6 +92,14 @@ declare class Tracker {
      * @returns
      */
     getLine(stack: string): string;
+    getExtraData(): {
+        title: string;
+        timestamp: number;
+        __topic__: string;
+        __source__: string;
+        __logs__: never[];
+        __tags__: string;
+    };
 }
 
 export { Tracker as default };

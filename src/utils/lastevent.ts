@@ -8,7 +8,6 @@ let lastEvent:Event;
     }
 })
 
-console.log(lastEvent)
 export default function () {
     return lastEvent;
 } 

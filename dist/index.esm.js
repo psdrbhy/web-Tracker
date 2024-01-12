@@ -2,6 +2,12 @@ var TrackerConfig;
 (function (TrackerConfig) {
     TrackerConfig["version"] = "1.0.0";
 })(TrackerConfig || (TrackerConfig = {}));
+// export interface data{
+//     title:string,
+//     url: Location
+//     timestamp:Date
+//     userAgent:string
+// }
 
 // 重写pushState和replaceState:因为history监听不到
 const createHistoryEvent = (type) => {
@@ -60,6 +66,8 @@ class Tracker {
                 console.log("监听到了");
                 //一旦我们监听到我们就系统自动进行上报
                 this.reportTracker({
+                    kind: 'stability',
+                    trackerType: "historyTracker",
                     event,
                     targetKey,
                     data
@@ -88,12 +96,42 @@ class Tracker {
      */
     reportTracker(data) {
         //因为第二个参数BodyInit没有json格式
-        const params = Object.assign(this.data, data, { time: utcFormat(new Date().getTime()) });
+        this.data.trackerParams = data;
+        const params = Object.assign(this.data, { currentTime: utcFormat(new Date().getTime()) });
+        // 发送到自己的后台
         let headers = {
             type: 'application/x-www-form-urlencoded'
         };
         let blob = new Blob([JSON.stringify(params)], headers); //转化成二进制然后进行new一个blob对象
         navigator.sendBeacon(this.data.requestUrl, blob);
+        // 发送到阿里云中去
+        let project = 'aquan-tracker';
+        let host = 'cn-guangzhou.log.aliyuncs.com';
+        let logstoreName = 'aquan-logstore';
+        let url = `http://${project}.${host}/logstores/${logstoreName}/track`;
+        let extraData = this.getExtraData();
+        let result = Object.assign(Object.assign({}, data), extraData);
+        for (const key in result) {
+            if (typeof result[key] == 'number') {
+                result[key] = `${result[key]}`;
+            }
+        }
+        console.log(result);
+        let xhr = new XMLHttpRequest;
+        let body = JSON.stringify(result);
+        xhr.open('post', url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('x-log-apiversion', '0.6.0');
+        xhr.setRequestHeader('x-log-bodyrawsize', `${body.length}`);
+        xhr.onload = function (res) {
+            console.log("success");
+            console.log(xhr.response);
+        };
+        xhr.onerror = function (error) {
+            console.log("error");
+            console.log(error);
+        };
+        xhr.send(body);
     }
     //DOM事件上报：分出来写
     targetKeyReport() {
@@ -104,11 +142,16 @@ class Tracker {
                 // 看dom上有没有这个属性，如果有就进行上报
                 if (targetKey) {
                     this.reportTracker({
+                        kind: 'stability',
+                        trackerType: "domTracker",
                         event,
                         targetKey,
                         // selector:e? getSelector(e) : '' //代表最后一个操作的元素
                     });
                 }
+            }, {
+                capture: true, //捕获：为了让获得的是最底层的那个，也是为了实现那个路径的功能
+                passive: true //性能优化
             });
         });
     }
@@ -118,16 +161,16 @@ class Tracker {
         this.promiseError();
     }
     /**
-     * 监听普通错误error
+     * 监听普通js错误
+     *
      */
     errorEvent() {
         window.addEventListener("error", (event) => {
             // let lastEvent = this.lastEvent;
             // console.log(lastEvent)
-            console.log(event);
             this.reportTracker({
                 kind: 'stability',
-                eventType: "JsError",
+                trackerType: "JsError",
                 targetKey: "message",
                 message: event.message,
                 fileName: event.filename,
@@ -145,7 +188,7 @@ class Tracker {
             event.promise.catch(error => {
                 this.reportTracker({
                     kind: 'stability',
-                    eventType: "PromiseError",
+                    trackerType: "PromiseError",
                     targetKey: "message",
                     message: error
                 });
@@ -179,6 +222,18 @@ class Tracker {
      */
     getLine(stack) {
         return stack.split('\n').slice(1).map(item => item.replace(/^\s+at\s+/g, "")).join('^');
+    }
+    getExtraData() {
+        return {
+            title: document.title,
+            // url: Location.url,
+            timestamp: Date.now(),
+            // userAgent:userAgent.parse(navigator,userAgent).name
+            __topic__: "topic",
+            "__source__": "source",
+            "__logs__": [],
+            __tags__: "fdsa"
+        };
     }
 }
 
