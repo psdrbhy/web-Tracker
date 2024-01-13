@@ -15,7 +15,7 @@ export interface DefaultOptions {
     domTracker: boolean,
     sdkVersion: string | number,
     extra: Record<string, any> | undefined,
-    jsError: boolean,
+    Error: boolean,
     trackerParams: ErrorParams | string
 }
 export interface Options extends Partial<DefaultOptions> {//把上面的一些变成非必填

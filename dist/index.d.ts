@@ -15,7 +15,7 @@ interface DefaultOptions {
     domTracker: boolean;
     sdkVersion: string | number;
     extra: Record<string, any> | undefined;
-    jsError: boolean;
+    Error: boolean;
     trackerParams: ErrorParams | string;
 }
 interface Options extends Partial<DefaultOptions> {

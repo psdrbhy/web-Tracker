@@ -9,7 +9,7 @@
  * @domTracker      携带Tracker-key的点击事件上报
  * @sdkVersion      版本
  * @extra           透传字段
- * @jsError         js和promise 报错异常上报
+ * @Error           报错异常上报
     可选
  * @project         Project名称
  * @host            所在地域的服务入口。例如cn-hangzhou.log.aliyuncs.com

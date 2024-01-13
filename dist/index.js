@@ -185,7 +185,7 @@
                 historyTracker: false,
                 hashTracker: false,
                 domTracker: false,
-                jsError: false
+                Error: false
             };
         }
         /**
@@ -219,7 +219,7 @@
             if (this.data.domTracker) {
                 this.targetKeyReport();
             }
-            if (this.data.jsError) {
+            if (this.data.Error) {
                 const errorTrackerClass = new ErrorTracker(this.reportTracker.bind(this));
                 errorTrackerClass.jsError();
             }
