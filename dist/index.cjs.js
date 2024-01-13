@@ -30,7 +30,6 @@ function utcFormat(time) {
 function getAliyun(project, host, logstore, result) {
     let url = `http://${project}.${host}/logstores/${logstore}/track`;
     //因为阿里云要求必须都是字符串类型
-    console.log(result);
     for (const key in result) {
         //处理对象类型
         if (typeof result[key] == 'object') {
@@ -57,6 +56,109 @@ function getAliyun(project, host, logstore, result) {
         console.log(error);
     };
     xhr.send(body);
+}
+
+class ErrorTracker {
+    constructor(reportTracker) {
+        this.reportTracker = reportTracker;
+    }
+    jsError() {
+        this.errorEvent();
+        this.resourceError();
+        this.promiseError();
+    }
+    /**
+ * error of common js
+ *
+ */
+    errorEvent() {
+        window.addEventListener("error", (event) => {
+            if (event.colno) {
+                this.reportTracker({
+                    kind: 'error',
+                    trackerType: "JsError",
+                    targetKey: "message",
+                    message: event.message,
+                    fileName: event.filename,
+                    position: `line:${event.lineno},col:${event.colno}`,
+                    stack: this.getLine(event.error.stack, 1),
+                    url: location.pathname
+                });
+            }
+        }, true);
+    }
+    /**
+ *   Error of resource
+ */
+    resourceError() {
+        window.addEventListener("error", (event) => {
+            console.log(event);
+            const target = event.target;
+            if (target && target.src) {
+                this.reportTracker({
+                    kind: 'error',
+                    trackerType: "resourceError",
+                    targetKey: "message",
+                    fileName: target.src,
+                    tagName: target.tagName,
+                    Html: target.outerHTML,
+                    url: location.pathname
+                });
+            }
+        }, true);
+    }
+    /**
+     * error of promise
+     */
+    promiseError() {
+        window.addEventListener("unhandledrejection", (event) => {
+            let message;
+            let fileName;
+            let position;
+            let stack;
+            let reason = event.reason;
+            if (typeof reason === 'string') {
+                message = reason;
+            }
+            else if (typeof reason === 'object') {
+                if (reason.stack) {
+                    message = reason.message;
+                    let matchResult = reason.stack.match(/(?:at\s+)?(http:\/\/[^\s]+\/[^\s]+):(\d+:\d+)/);
+                    stack = this.getLine(reason.stack, 3);
+                    fileName = matchResult[1];
+                    position = matchResult[2];
+                }
+            }
+            event.promise.catch(error => {
+                this.reportTracker({
+                    kind: 'error',
+                    trackerType: "PromiseError",
+                    targetKey: "message",
+                    url: location.pathname,
+                    message,
+                    fileName,
+                    stack,
+                    position,
+                });
+            });
+        });
+    }
+    /**
+ * 拼接stack
+ * @param stack
+ * @returns
+ */
+    getLine(stack, sliceNum) {
+        return stack.split('\n').slice(sliceNum).map(item => item.replace(/^\s+at\s+/g, "")).join('^');
+    }
+    getExtraData() {
+        return {
+            title: document.title,
+            // url: Location.url,
+            timestamp: Date.now(),
+            // userAgent:userAgent.parse(navigator,userAgent).name
+        };
+    }
 }
 
 // 需要监听的事件
@@ -91,7 +193,6 @@ class Tracker {
     captureEvents(mouseEventList, targetKey, data) {
         mouseEventList.forEach((event, index) => {
             window.addEventListener(event, () => {
-                console.log("监听到了");
                 //一旦我们监听到我们就系统自动进行上报
                 this.reportTracker({
                     kind: 'stability',
@@ -115,7 +216,8 @@ class Tracker {
             this.targetKeyReport();
         }
         if (this.data.jsError) {
-            this.jsError();
+            const errorTrackerClass = new ErrorTracker(this.reportTracker.bind(this));
+            errorTrackerClass.jsError();
         }
     }
     /**
@@ -125,7 +227,7 @@ class Tracker {
     reportTracker(data) {
         //因为第二个参数BodyInit没有json格式
         this.data.trackerParams = data;
-        const params = Object.assign(this.data, { currentTime: utcFormat(new Date().getTime()) });
+        const params = Object.assign(data, { currentTime: utcFormat(new Date().getTime()) });
         // 发送到自己的后台
         let headers = {
             type: 'application/x-www-form-urlencoded'
@@ -135,7 +237,6 @@ class Tracker {
         // 如果存在发送到阿里云中去
         if (this.aliyunOptions) {
             let { project, host, logstore } = this.aliyunOptions;
-            console.log(params);
             getAliyun(project, host, logstore, params);
         }
     }
@@ -161,46 +262,6 @@ class Tracker {
             });
         });
     }
-    //收集一下
-    jsError() {
-        this.errorEvent();
-        this.promiseError();
-    }
-    /**
-     * 监听普通js错误
-     *
-     */
-    errorEvent() {
-        window.addEventListener("error", (event) => {
-            // let lastEvent = this.lastEvent;
-            // console.log(lastEvent)
-            this.reportTracker({
-                kind: 'stability',
-                trackerType: "JsError",
-                targetKey: "message",
-                message: event.message,
-                fileName: event.filename,
-                position: `line:${event.lineno},col:${event.colno}`,
-                stack: this.getLine(event.error.stack),
-                // selector:
-            });
-        });
-    }
-    /**
-     * 监听promise的错误
-     */
-    promiseError() {
-        window.addEventListener("unhandledrejection", (event) => {
-            event.promise.catch(error => {
-                this.reportTracker({
-                    kind: 'stability',
-                    trackerType: "PromiseError",
-                    targetKey: "message",
-                    message: error
-                });
-            });
-        });
-    }
     /**
      * 手动上报
      */
@@ -220,22 +281,6 @@ class Tracker {
      */
     setExtra(extra) {
         this.data.extra = extra;
-    }
-    /**
-     * 拼接stack
-     * @param stack
-     * @returns
-     */
-    getLine(stack) {
-        return stack.split('\n').slice(1).map(item => item.replace(/^\s+at\s+/g, "")).join('^');
-    }
-    getExtraData() {
-        return {
-            title: document.title,
-            // url: Location.url,
-            timestamp: Date.now(),
-            // userAgent:userAgent.parse(navigator,userAgent).name
-        };
     }
 }
 

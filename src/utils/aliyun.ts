@@ -3,7 +3,6 @@
 export default function getAliyun(project: string, host: string, logstore: string, result: any) {
     let url = `http://${project}.${host}/logstores/${logstore}/track`
     //因为阿里云要求必须都是字符串类型
-    console.log(result)
     for (const key in result) {
         //处理对象类型
         if (typeof result[key] == 'object') {

@@ -66,18 +66,8 @@ declare class Tracker {
      * 上报监控数据给后台
      * @param data 传入的数据
      */
-    private reportTracker;
+    reportTracker<T extends ErrorParams>(data: T): void;
     private targetKeyReport;
-    private jsError;
-    /**
-     * 监听普通js错误
-     *
-     */
-    private errorEvent;
-    /**
-     * 监听promise的错误
-     */
-    private promiseError;
     /**
      * 手动上报
      */
@@ -92,16 +82,6 @@ declare class Tracker {
      * @param extra 透传字段
      */
     setExtra<T extends DefaultOptions['extra']>(extra: T): void;
-    /**
-     * 拼接stack
-     * @param stack
-     * @returns
-     */
-    getLine(stack: string): string;
-    getExtraData(): {
-        title: string;
-        timestamp: number;
-    };
 }
 
 export { Tracker as default };

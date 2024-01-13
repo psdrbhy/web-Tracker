@@ -2,8 +2,9 @@ import { DefaultOptions, TrackerConfig, Options, ErrorParams, aliyunParams } fro
 import { createHistoryEvent } from "../utils/pv";
 import { utcFormat } from '../utils/timeFormat'
 import getAliyun from '../utils/aliyun'
-// 需要监听的事件
 
+import ErrorTracker from '../error/index'
+// 需要监听的事件
 const MouseEventList: string[] = ['click', 'dblclick', 'contextmenu', 'mousedown', 'mouseup', 'mouseenter', 'mouseout', 'mouseover']
 export default class Tracker {
     public data: Options;
@@ -37,7 +38,6 @@ export default class Tracker {
     private captureEvents<T>(mouseEventList: string[], targetKey: string, data?: T) {
         mouseEventList.forEach((event, index) => {
             window.addEventListener(event, () => {
-                console.log("监听到了")
                 //一旦我们监听到我们就系统自动进行上报
                 this.reportTracker({
                     kind: 'stability',
@@ -62,18 +62,18 @@ export default class Tracker {
             this.targetKeyReport()
         }
         if (this.data.jsError) {
-
-            this.jsError()
+            const errorTrackerClass = new ErrorTracker(this.reportTracker.bind(this))
+            errorTrackerClass.jsError()
         }
     }
     /**
      * 上报监控数据给后台
      * @param data 传入的数据
      */
-    private reportTracker<T extends ErrorParams>(data: T) {
+    public reportTracker<T extends ErrorParams>(data: T) {
         //因为第二个参数BodyInit没有json格式
         this.data.trackerParams = data
-        const params = Object.assign(this.data, { currentTime: utcFormat(new Date().getTime()) });
+        const params = Object.assign(data, { currentTime: utcFormat(new Date().getTime()) });
         // 发送到自己的后台
         let headers = {
             type: 'application/x-www-form-urlencoded'
@@ -83,7 +83,6 @@ export default class Tracker {
         // 如果存在发送到阿里云中去
         if (this.aliyunOptions) {
             let { project, host, logstore } = this.aliyunOptions
-            console.log(params)
             getAliyun(project, host, logstore, params)
         }
 
@@ -114,49 +113,6 @@ export default class Tracker {
             )
         })
     }
-    //收集一下
-    private jsError() {
-
-        this.errorEvent()
-        this.promiseError()
-    }
-
-    /**
-     * 监听普通js错误
-     * 
-     */
-    private errorEvent() {
-        window.addEventListener("error", (event) => {
-            // let lastEvent = this.lastEvent;
-            // console.log(lastEvent)
-            this.reportTracker({
-                kind: 'stability',
-                trackerType: "JsError",
-                targetKey: "message",
-                message: event.message,
-                fileName: event.filename,
-                position: `line:${event.lineno},col:${event.colno}`,
-                stack: this.getLine(event.error.stack),
-                // selector:
-            })
-        })
-    }
-    /**
-     * 监听promise的错误
-     */
-    private promiseError() {
-        window.addEventListener("unhandledrejection", (event) => {
-            event.promise.catch(error => {
-                this.reportTracker({
-                    kind: 'stability',
-                    trackerType: "PromiseError",
-                    targetKey: "message",
-                    message: error
-                })
-            })
-
-        })
-    }
 
     /**
      * 手动上报
@@ -178,23 +134,5 @@ export default class Tracker {
     public setExtra<T extends DefaultOptions['extra']>(extra: T) {
         this.data.extra = extra
     }
-    /**
-     * 拼接stack
-     * @param stack 
-     * @returns 
-     */
-    public getLine(stack: string) {
-        return stack.split('\n').slice(1).map(item => item.replace(/^\s+at\s+/g, "")).join('^')
-    }
 
-
-    public getExtraData() {
-
-        return {
-            title: document.title,
-            // url: Location.url,
-            timestamp: Date.now(),
-            // userAgent:userAgent.parse(navigator,userAgent).name
-        }
-    }
 }

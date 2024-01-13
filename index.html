@@ -1,43 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
 <script src="./dist//index.js"></script>
+
 <body>
+    <button target-key="btn">有监听</button>
 
-
-
-
-
-    <button target-key = "btn">有监听</button>
-    
     <button>没有监听</button>
     <div id="container">
         <div class="content">
             <input type="button" value="点击抛出js错误" onclick="errorClick()">
+
+            <input type="button" value="点击抛出PromiseJs错误" onclick="promiseErrorClick()">
         </div>
 
     </div>
     <script>
-        new Tracker({
-            requestUrl:"http://localhost:3000/curd",
-            historyTracker:false,
-            domTracker:true,
-            jsError:true
-        },{
-            project:'aquan-tracker',
-            host:'cn-guangzhou.log.aliyuncs.com',
-            logstore:'aquan-logstore'
-        })
 
-        function errorClick(){
+        new Tracker({
+            requestUrl: "http://localhost:3000/curd",
+            historyTracker: false,
+            domTracker: true,
+            jsError: true
+        }, {
+            project: 'aquan-tracker',
+            host: 'cn-guangzhou.log.aliyuncs.com',
+            logstore: 'aquan-logstore'
+        })
+        // 普通js报错测试
+        function errorClick() {
             console.log('报错')
             console.log(t)
         }
-    </script>   
-
+        // promise报错测试
+        function promiseErrorClick() {
+            new Promise(function (resolve, reject) {
+                // console.log(t)
+                reject("fdfsafsdaf")
+            })
+        }
+    </script>
+    <script src="/someError.js"></script>
 </body>
+
 </html>
