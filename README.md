@@ -29,7 +29,7 @@ eg:
       requestUrl:"http://localhost:3000/curd",
       historyTracker:false,
       domTracker:true,
-      jsError:true
+      Error:true
   },{
       project:'aquan-tracker',
       host:'cn-guangzhou.log.aliyuncs.com',

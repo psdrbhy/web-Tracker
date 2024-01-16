@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
 </head>
 <script src="./dist//index.js"></script>
@@ -14,38 +14,62 @@
     <button>没有监听</button>
     <div id="container">
         <div class="content">
-            <input type="button" value="点击抛出js错误" onclick="errorClick()">
+            <input type="button" value="点击抛出js错误" onclick="errorClick()" />
 
-            <input type="button" value="点击抛出PromiseJs错误" onclick="promiseErrorClick()">
+            <input type="button" value="点击抛出PromiseJs错误" onclick="promiseErrorClick()" />
+
+            <input id="successBtn" type="button" value="ajax发送请求" onclick="sendSuccess()" />
+            <input id="errorBtn" type="button" value="ajax发送失败" onclick="sendError()" />
         </div>
-
     </div>
     <script>
-
-        new Tracker({
-            requestUrl: "http://localhost:3000/curd",
-            historyTracker: false,
-            domTracker: true,
-            Error: true
-        }, {
-            project: 'aquan-tracker',
-            host: 'cn-guangzhou.log.aliyuncs.com',
-            logstore: 'aquan-logstore'
-        })
+        new Tracker(
+            {
+                requestUrl: 'http://localhost:3000/curd',
+                historyTracker: false,
+                domTracker: true,
+                Error: true,
+            },
+            {
+                project: 'aquan-tracker',
+                host: 'cn-guangzhou.log.aliyuncs.com',
+                logstore: 'aquan-logstore',
+            },
+        );
         // 普通js报错测试
         function errorClick() {
-            console.log('报错')
-            console.log(t)
+            console.log('报错');
+            console.log(t);
         }
         // promise报错测试
         function promiseErrorClick() {
             new Promise(function (resolve, reject) {
                 // console.log(t)
-                reject("fdfsafsdaf")
-            })
+                reject('fdfsafsdaf');
+            });
+        }
+
+        // ajax测试
+        function sendSuccess() {
+            let xhr = new XMLHttpRequest();
+            xhr.open('get', '/success', true);
+            xhr.responseType = 'json';
+            xhr.onload = function () {
+                console.log(xhr.response);
+            };
+            xhr.send();
+        }
+        function sendError() {
+            let xhr = new XMLHttpRequest();
+            xhr.open('post', '/error', true);
+            xhr.responseType = 'json';
+            xhr.onerror = function (err) {
+                console.log(err);
+            };
+            xhr.send();
         }
     </script>
-    <script src="/someError.js"></script>
+    <!-- <script src="/someError.js"></script> -->
 </body>
 
 </html>

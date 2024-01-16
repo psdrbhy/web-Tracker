@@ -18,6 +18,7 @@
   "author": "aquan",
   "license": "ISC",
   "devDependencies": {
+    "prettier": "3.2.2",
     "rollup": "^4.9.1",
     "rollup-plugin-dts": "^6.1.0",
     "rollup-plugin-typescript2": "^0.36.0",

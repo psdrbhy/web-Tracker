@@ -10,6 +10,7 @@ const createHistoryEvent = (type) => {
     //获取到函数
     const orign = history[type];
     return function () {
+        //这里的this是一个假参数
         const res = orign.apply(this, arguments);
         // 创建事件
         const e = new Event(type);
@@ -22,7 +23,9 @@ const createHistoryEvent = (type) => {
 // createHistoryEvent("pushState")
 
 function utcFormat(time) {
-    var date = new Date(time), year = date.getFullYear(), month = date.getMonth() + 1 > 9 ? date.getMonth() + 1 : '0' + (date.getMonth() + 1), day = date.getDate() > 9 ? date.getDate() : '0' + date.getDate(), hour = date.getHours() > 9 ? date.getHours() : '0' + date.getHours(), minutes = date.getMinutes() > 9 ? date.getMinutes() : '0' + date.getMinutes(), seconds = date.getSeconds() > 9 ? date.getSeconds() : '0' + date.getSeconds();
+    var date = new Date(time), year = date.getFullYear(), month = date.getMonth() + 1 > 9
+        ? date.getMonth() + 1
+        : '0' + (date.getMonth() + 1), day = date.getDate() > 9 ? date.getDate() : '0' + date.getDate(), hour = date.getHours() > 9 ? date.getHours() : '0' + date.getHours(), minutes = date.getMinutes() > 9 ? date.getMinutes() : '0' + date.getMinutes(), seconds = date.getSeconds() > 9 ? date.getSeconds() : '0' + date.getSeconds();
     var res = year + '-' + month + '-' + day + ' ' + hour + ':' + minutes + ':' + seconds;
     return res;
 }
@@ -40,22 +43,60 @@ function getAliyun(project, host, logstore, result) {
         }
     }
     let body = JSON.stringify({
-        __logs__: [result]
+        __logs__: [result],
     });
-    let xhr = new XMLHttpRequest;
+    let xhr = new XMLHttpRequest();
     xhr.open('post', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.setRequestHeader('x-log-apiversion', '0.6.0');
     xhr.setRequestHeader('x-log-bodyrawsize', `${result.length}`);
     xhr.onload = function (res) {
-        console.log("success");
+        console.log('success');
         console.log(xhr.response);
     };
     xhr.onerror = function (error) {
-        console.log("error");
+        console.log('error');
         console.log(error);
     };
     xhr.send(body);
+}
+
+function xhrTracker(handlerReport) {
+    let XMLHttpRequest = window.XMLHttpRequest;
+    // 对XHR上面的方法进行重写
+    let oldOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function (method, url) {
+        if (!url.match(/logstores/)) { //排除阿里云
+            this.logData = { method, url };
+        }
+        return oldOpen.call(this, method, url, true);
+    };
+    let oldSend = XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.send = function () {
+        if (this.logData) {
+            let startTime = Date.now();
+            let handler = (type) => () => {
+                let duration = Date.now() - startTime;
+                let status = this.status; //这里为什么又可以使用this
+                let data = {
+                    trackerType: 'ajax',
+                    eventType: type,
+                    targetKey: 'message',
+                    method: this.logData.method,
+                    url: this.logData.url,
+                    status: status,
+                    duration: duration,
+                    response: this.response ? JSON.stringify(this.response) : '',
+                };
+                console.log('sssssssssssss');
+                handlerReport(data);
+            };
+            this.addEventListener('load', handler('load'), false);
+            this.addEventListener('error', handler('error'), false);
+            this.addEventListener('abort', handler('abort'), false);
+        }
+        return oldSend.call(this);
+    };
 }
 
 class ErrorTracker {
@@ -66,43 +107,44 @@ class ErrorTracker {
         this.errorEvent();
         this.resourceError();
         this.promiseError();
+        this.httpError();
     }
     /**
- * error of common js
- *
- */
+     * error of common js
+     *
+     */
     errorEvent() {
-        window.addEventListener("error", (event) => {
+        window.addEventListener('error', (event) => {
             if (event.colno) {
                 this.reportTracker({
                     kind: 'error',
-                    trackerType: "JsError",
-                    targetKey: "message",
+                    trackerType: 'JsError',
+                    targetKey: 'message',
                     message: event.message,
                     fileName: event.filename,
                     position: `line:${event.lineno},col:${event.colno}`,
                     stack: this.getLine(event.error.stack, 1),
-                    url: location.pathname
+                    url: location.pathname,
                 });
             }
         }, true);
     }
     /**
- *   Error of resource
- */
+     *   Error of resource
+     */
     resourceError() {
-        window.addEventListener("error", (event) => {
+        window.addEventListener('error', (event) => {
             console.log(event);
             const target = event.target;
             if (target && target.src) {
                 this.reportTracker({
                     kind: 'error',
-                    trackerType: "resourceError",
-                    targetKey: "message",
+                    trackerType: 'resourceError',
+                    targetKey: 'message',
                     fileName: target.src,
                     tagName: target.tagName,
                     Html: target.outerHTML,
-                    url: location.pathname
+                    url: location.pathname,
                 });
             }
         }, true);
@@ -111,7 +153,7 @@ class ErrorTracker {
      * error of promise
      */
     promiseError() {
-        window.addEventListener("unhandledrejection", (event) => {
+        window.addEventListener('unhandledrejection', (event) => {
             let message;
             let fileName;
             let position;
@@ -129,11 +171,11 @@ class ErrorTracker {
                     position = matchResult[2];
                 }
             }
-            event.promise.catch(error => {
+            event.promise.catch((error) => {
                 this.reportTracker({
                     kind: 'error',
-                    trackerType: "PromiseError",
-                    targetKey: "message",
+                    trackerType: 'PromiseError',
+                    targetKey: 'message',
                     url: location.pathname,
                     message,
                     fileName,
@@ -144,12 +186,27 @@ class ErrorTracker {
         });
     }
     /**
- * 拼接stack
- * @param stack
- * @returns
- */
+     * error of Http
+     */
+    httpError() {
+        const handler = (xhrTrackerData) => {
+            if (xhrTrackerData.status < 400)
+                return;
+            this.reportTracker(Object.assign({ kind: 'xhrError' }, xhrTrackerData));
+        };
+        xhrTracker(handler);
+    }
+    /**
+     * 拼接stack
+     * @param stack
+     * @returns
+     */
     getLine(stack, sliceNum) {
-        return stack.split('\n').slice(sliceNum).map(item => item.replace(/^\s+at\s+/g, "")).join('^');
+        return stack
+            .split('\n')
+            .slice(sliceNum)
+            .map((item) => item.replace(/^\s+at\s+/g, ''))
+            .join('^');
     }
     getExtraData() {
         return {
@@ -162,7 +219,16 @@ class ErrorTracker {
 }
 
 // 需要监听的事件
-const MouseEventList = ['click', 'dblclick', 'contextmenu', 'mousedown', 'mouseup', 'mouseenter', 'mouseout', 'mouseover'];
+const MouseEventList = [
+    'click',
+    'dblclick',
+    'contextmenu',
+    'mousedown',
+    'mouseup',
+    'mouseenter',
+    'mouseout',
+    'mouseover',
+];
 class Tracker {
     // public lastEvent: Event;
     constructor(options, aliyunOptions) {
@@ -181,7 +247,7 @@ class Tracker {
             historyTracker: false,
             hashTracker: false,
             domTracker: false,
-            Error: false
+            Error: false,
         };
     }
     /**
@@ -196,10 +262,10 @@ class Tracker {
                 //一旦我们监听到我们就系统自动进行上报
                 this.reportTracker({
                     kind: 'stability',
-                    trackerType: "historyTracker",
+                    trackerType: 'historyTracker',
                     event,
                     targetKey,
-                    data
+                    data,
                 });
             });
         });
@@ -207,7 +273,7 @@ class Tracker {
     //用来判断是否开启
     installTracker() {
         if (this.data.historyTracker) {
-            this.captureEvents(['pushState', 'replaceState', 'popstate'], "history-pv");
+            this.captureEvents(['pushState', 'replaceState', 'popstate'], 'history-pv');
         }
         if (this.data.hashTracker) {
             this.captureEvents(['hashchange'], 'hash-pv');
@@ -227,10 +293,12 @@ class Tracker {
     reportTracker(data) {
         //因为第二个参数BodyInit没有json格式
         this.data.trackerParams = data;
-        const params = Object.assign(data, { currentTime: utcFormat(new Date().getTime()) });
+        const params = Object.assign(data, {
+            currentTime: utcFormat(new Date().getTime()),
+        });
         // 发送到自己的后台
         let headers = {
-            type: 'application/x-www-form-urlencoded'
+            type: 'application/x-www-form-urlencoded',
         };
         let blob = new Blob([JSON.stringify(params)], headers); //转化成二进制然后进行new一个blob对象
         navigator.sendBeacon(this.data.requestUrl, blob);
@@ -250,7 +318,7 @@ class Tracker {
                 if (targetKey) {
                     this.reportTracker({
                         kind: 'stability',
-                        trackerType: "domTracker",
+                        trackerType: 'domTracker',
                         event,
                         targetKey,
                         // selector:e? getSelector(e) : '' //代表最后一个操作的元素
@@ -258,7 +326,7 @@ class Tracker {
                 }
             }, {
                 capture: true, //捕获：为了让获得的是最底层的那个，也是为了实现那个路径的功能
-                passive: true //性能优化
+                passive: true, //性能优化
             });
         });
     }
