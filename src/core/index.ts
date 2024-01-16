@@ -4,10 +4,11 @@ import {
   Options,
   ErrorParams,
   aliyunParams,
-} from '../types/index';
+} from '../types/core';
 import { createHistoryEvent } from '../utils/pv';
 import { utcFormat } from '../utils/timeFormat';
 import getAliyun from '../utils/aliyun';
+import { userAction } from '../userAction'
 
 import ErrorTracker from '../error/index';
 // 需要监听的事件
@@ -84,7 +85,11 @@ export default class Tracker {
     }
     if (this.data.Error) {
       const errorTrackerClass = new ErrorTracker(this.reportTracker.bind(this));
-      errorTrackerClass.jsError();
+      errorTrackerClass.errorEvent();
+    }
+    if (this.data.userAction) {
+      const userActionTrackerClass = new userAction(this.reportTracker.bind(this));
+      userActionTrackerClass.eventTracker()
     }
   }
   /**
@@ -96,6 +101,7 @@ export default class Tracker {
     this.data.trackerParams = data;
     const params = Object.assign(data, {
       currentTime: utcFormat(new Date().getTime()),
+      userAgent:navigator.userAgent,
     });
     // 发送到自己的后台
     let headers = {
@@ -106,6 +112,7 @@ export default class Tracker {
     // 如果存在发送到阿里云中去
     if (this.aliyunOptions) {
       let { project, host, logstore } = this.aliyunOptions;
+      console.log(params);
       getAliyun(project, host, logstore, params);
     }
   }

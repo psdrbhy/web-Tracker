@@ -59,41 +59,102 @@ function getAliyun(project, host, logstore, result) {
     xhr.send(body);
 }
 
+class blankScreenTracker {
+    constructor(reportTracker) {
+        this.reportTracker = reportTracker;
+        this.emptyPoint = 0;
+        this.element();
+        if (this.emptyPoint > 16) {
+            let centerElement = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
+            reportTracker({
+                kind: 'userAction',
+                trackerType: 'blank',
+                emptyPoint: this.emptyPoint,
+                screen: window.screen.width + 'X' + window.screen.height,
+                viewPoint: window.innerWidth + 'X' + window.innerHeight,
+                selector: this.getSelector(centerElement) //放中间元素
+            });
+        }
+    }
+    element() {
+        for (let i = 0; i <= 9; i++) {
+            let XElement = document.elementFromPoint(window.innerWidth * i / 10, window.innerHeight / 2);
+            let YElement = document.elementFromPoint(window.innerWidth / 2, window.innerHeight * i / 10);
+            this.isWrapper(XElement);
+            this.isWrapper(YElement);
+        }
+    }
+    isWrapper(element) {
+        let WrapperElement = ['html', 'body', '#container', '.content'];
+        let selector = this.getSelector(element);
+        if (WrapperElement.indexOf(selector) != -1) {
+            this.emptyPoint++;
+        }
+    }
+    getSelector(element) {
+        if (element === null || element === void 0 ? void 0 : element.id) {
+            return '#' + element.id;
+        }
+        else if (element === null || element === void 0 ? void 0 : element.className) {
+            let className = element.className.split(' ').filter(item => !!item).join('.');
+            return "." + className;
+        }
+        else {
+            return element === null || element === void 0 ? void 0 : element.nodeName.toLowerCase();
+        }
+    }
+}
+
+class userAction {
+    constructor(reportTracker) {
+        this.reportTracker = reportTracker;
+    }
+    eventTracker() {
+        this.blankScreen();
+    }
+    blankScreen() {
+        new blankScreenTracker(this.reportTracker);
+    }
+}
+
 function xhrTracker(handlerReport) {
     let XMLHttpRequest = window.XMLHttpRequest;
     // 对XHR上面的方法进行重写
     let oldOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function (method, url) {
-        if (!url.match(/logstores/)) { //排除阿里云
+        //排除阿里云接口
+        if (!url.match(/logstores/)) {
             this.logData = { method, url };
         }
         return oldOpen.call(this, method, url, true);
     };
     let oldSend = XMLHttpRequest.prototype.send;
-    XMLHttpRequest.prototype.send = function () {
+    XMLHttpRequest.prototype.send = function (body) {
         if (this.logData) {
             let startTime = Date.now();
-            let handler = (type) => () => {
+            let handler = (type) => (err) => {
                 let duration = Date.now() - startTime;
-                let status = this.status; //这里为什么又可以使用this
+                let status = this.status;
+                let statusText = this.statusText;
                 let data = {
-                    trackerType: 'ajax',
+                    trackerType: 'xhr',
                     eventType: type,
                     targetKey: 'message',
                     method: this.logData.method,
                     url: this.logData.url,
                     status: status,
+                    statusText: statusText,
                     duration: duration,
                     response: this.response ? JSON.stringify(this.response) : '',
+                    params: body,
                 };
-                console.log('sssssssssssss');
                 handlerReport(data);
             };
             this.addEventListener('load', handler('load'), false);
             this.addEventListener('error', handler('error'), false);
             this.addEventListener('abort', handler('abort'), false);
         }
-        return oldSend.call(this);
+        return oldSend.apply(this, body);
     };
 }
 
@@ -101,17 +162,17 @@ class ErrorTracker {
     constructor(reportTracker) {
         this.reportTracker = reportTracker;
     }
-    jsError() {
-        this.errorEvent();
+    errorEvent() {
+        this.jsError();
         this.resourceError();
         this.promiseError();
-        this.httpError();
+        // this.httpError();
     }
     /**
      * error of common js
      *
      */
-    errorEvent() {
+    jsError() {
         window.addEventListener('error', (event) => {
             if (event.colno) {
                 this.reportTracker({
@@ -188,9 +249,10 @@ class ErrorTracker {
      */
     httpError() {
         const handler = (xhrTrackerData) => {
+            // 大于400才进行上报
             if (xhrTrackerData.status < 400)
                 return;
-            this.reportTracker(Object.assign({ kind: 'xhrError' }, xhrTrackerData));
+            this.reportTracker(Object.assign({ kind: 'ajax' }, xhrTrackerData));
         };
         xhrTracker(handler);
     }
@@ -281,7 +343,11 @@ class Tracker {
         }
         if (this.data.Error) {
             const errorTrackerClass = new ErrorTracker(this.reportTracker.bind(this));
-            errorTrackerClass.jsError();
+            errorTrackerClass.errorEvent();
+        }
+        if (this.data.userAction) {
+            const userActionTrackerClass = new userAction(this.reportTracker.bind(this));
+            userActionTrackerClass.eventTracker();
         }
     }
     /**
@@ -293,6 +359,7 @@ class Tracker {
         this.data.trackerParams = data;
         const params = Object.assign(data, {
             currentTime: utcFormat(new Date().getTime()),
+            userAgent: navigator.userAgent,
         });
         // 发送到自己的后台
         let headers = {
@@ -303,6 +370,7 @@ class Tracker {
         // 如果存在发送到阿里云中去
         if (this.aliyunOptions) {
             let { project, host, logstore } = this.aliyunOptions;
+            console.log(params);
             getAliyun(project, host, logstore, params);
         }
     }

@@ -1,23 +1,23 @@
 import { ReportTracker } from '../types/error';
-import { XhrTrackerData } from '../types/xhr';
-import xhrTracker from '../userAction/xhr';
+import { XhrTrackerData } from '../types/AjaxXhr';
+import xhrTracker from '../userAction/AjaxXhr';
 export default class ErrorTracker {
   private reportTracker: ReportTracker;
   constructor(reportTracker: ReportTracker) {
     this.reportTracker = reportTracker;
   }
 
-  public jsError() {
-    this.errorEvent();
+  public errorEvent() {
+    this.jsError();
     this.resourceError();
     this.promiseError();
-    this.httpError();
+    // this.httpError();
   }
   /**
    * error of common js
    *
    */
-  private errorEvent() {
+  private jsError() {
     window.addEventListener(
       'error',
       (event: ErrorEvent) => {
@@ -107,9 +107,9 @@ export default class ErrorTracker {
       // 大于400才进行上报
       if (xhrTrackerData.status < 400) return;
       this.reportTracker({
-        kind: 'xhrError',
-        ...xhrTrackerData
-      })
+        kind: 'ajax',
+        ...xhrTrackerData,
+      });
     };
     xhrTracker(handler);
   }

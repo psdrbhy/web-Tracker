@@ -16,7 +16,8 @@ export interface DefaultOptions {
     sdkVersion: string | number,
     extra: Record<string, any> | undefined,
     Error: boolean,
-    trackerParams: ErrorParams | string
+    trackerParams: ErrorParams | string,
+    userAction:boolean
 }
 export interface Options extends Partial<DefaultOptions> {//把上面的一些变成非必填
     requestUrl: string,//只有这个是必须要传

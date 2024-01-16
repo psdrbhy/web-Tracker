@@ -29,6 +29,7 @@
                 historyTracker: false,
                 domTracker: true,
                 Error: true,
+                userAction:true
             },
             {
                 project: 'aquan-tracker',
@@ -38,7 +39,6 @@
         );
         // 普通js报错测试
         function errorClick() {
-            console.log('报错');
             console.log(t);
         }
         // promise报错测试
@@ -52,7 +52,7 @@
         // ajax测试
         function sendSuccess() {
             let xhr = new XMLHttpRequest();
-            xhr.open('get', '/success', true);
+            xhr.open('get', 'http://localhost:3000/curd', true);
             xhr.responseType = 'json';
             xhr.onload = function () {
                 console.log(xhr.response);

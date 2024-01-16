@@ -17,6 +17,7 @@ interface DefaultOptions {
     extra: Record<string, any> | undefined;
     Error: boolean;
     trackerParams: ErrorParams | string;
+    userAction: boolean;
 }
 interface Options extends Partial<DefaultOptions> {
     requestUrl: string;
