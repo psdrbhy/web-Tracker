@@ -11,7 +11,7 @@ export default class ErrorTracker {
     this.jsError();
     this.resourceError();
     this.promiseError();
-    // this.httpError();
+    this.httpError();
   }
   /**
    * error of common js
@@ -105,6 +105,7 @@ export default class ErrorTracker {
   private httpError() {
     const handler = (xhrTrackerData: XhrTrackerData) => {
       // 大于400才进行上报
+      // console.log(xhrTrackerData)
       if (xhrTrackerData.status < 400) return;
       this.reportTracker({
         kind: 'ajax',

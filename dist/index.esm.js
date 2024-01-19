@@ -63,23 +63,34 @@ class blankScreenTracker {
     constructor(reportTracker) {
         this.reportTracker = reportTracker;
         this.emptyPoint = 0;
-        this.element();
-        if (this.emptyPoint > 16) {
-            let centerElement = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
-            reportTracker({
-                kind: 'userAction',
-                trackerType: 'blank',
-                emptyPoint: this.emptyPoint,
-                screen: window.screen.width + 'X' + window.screen.height,
-                viewPoint: window.innerWidth + 'X' + window.innerHeight,
-                selector: this.getSelector(centerElement) //放中间元素
+        this.load();
+        // this.element()
+    }
+    load() {
+        if (document.readyState === 'complete') {
+            this.element();
+        }
+        else {
+            window.addEventListener('load', () => {
+                this.element();
+                if (this.emptyPoint > 0) {
+                    let centerElement = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
+                    this.reportTracker({
+                        kind: 'userAction',
+                        trackerType: 'blank',
+                        emptyPoint: this.emptyPoint,
+                        screen: window.screen.width + 'X' + window.screen.height,
+                        viewPoint: window.innerWidth + 'X' + window.innerHeight,
+                        selector: this.getSelector(centerElement), //放中间元素
+                    });
+                }
             });
         }
     }
     element() {
-        for (let i = 0; i <= 9; i++) {
-            let XElement = document.elementFromPoint(window.innerWidth * i / 10, window.innerHeight / 2);
-            let YElement = document.elementFromPoint(window.innerWidth / 2, window.innerHeight * i / 10);
+        for (let i = 0; i < 9; i++) {
+            let XElement = document.elementFromPoint((window.innerWidth * i) / 10, window.innerHeight / 2);
+            let YElement = document.elementFromPoint(window.innerWidth / 2, (window.innerHeight * i) / 10);
             this.isWrapper(XElement);
             this.isWrapper(YElement);
         }
@@ -96,8 +107,11 @@ class blankScreenTracker {
             return '#' + element.id;
         }
         else if (element === null || element === void 0 ? void 0 : element.className) {
-            let className = element.className.split(' ').filter(item => !!item).join('.');
-            return "." + className;
+            let className = element.className
+                .split(' ')
+                .filter((item) => !!item)
+                .join('.');
+            return '.' + className;
         }
         else {
             return element === null || element === void 0 ? void 0 : element.nodeName.toLowerCase();
@@ -122,8 +136,8 @@ function xhrTracker(handlerReport) {
     // 对XHR上面的方法进行重写
     let oldOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function (method, url) {
-        //排除阿里云接口
-        if (!url.match(/logstores/)) {
+        //排除阿里云接口和webpack脏值检测
+        if (!url.match(/logstores/) && !url.match(/sockjs/)) {
             this.logData = { method, url };
         }
         return oldOpen.call(this, method, url, true);
@@ -132,7 +146,7 @@ function xhrTracker(handlerReport) {
     XMLHttpRequest.prototype.send = function (body) {
         if (this.logData) {
             let startTime = Date.now();
-            let handler = (type) => (err) => {
+            let handler = (type) => () => {
                 let duration = Date.now() - startTime;
                 let status = this.status;
                 let statusText = this.statusText;
@@ -149,12 +163,13 @@ function xhrTracker(handlerReport) {
                     params: body,
                 };
                 handlerReport(data);
+                console.log("fdsffdsa");
             };
-            this.addEventListener('load', handler('load'), false);
             this.addEventListener('error', handler('error'), false);
+            this.addEventListener('load', handler('load'), false);
             this.addEventListener('abort', handler('abort'), false);
         }
-        return oldSend.apply(this, body);
+        return oldSend.call(this, body);
     };
 }
 
@@ -166,7 +181,7 @@ class ErrorTracker {
         this.jsError();
         this.resourceError();
         this.promiseError();
-        // this.httpError();
+        this.httpError();
     }
     /**
      * error of common js
@@ -250,6 +265,7 @@ class ErrorTracker {
     httpError() {
         const handler = (xhrTrackerData) => {
             // 大于400才进行上报
+            // console.log(xhrTrackerData)
             if (xhrTrackerData.status < 400)
                 return;
             this.reportTracker(Object.assign({ kind: 'ajax' }, xhrTrackerData));
@@ -295,6 +311,8 @@ class Tracker {
         this.data = Object.assign(this.initDef(), options); //把options复制到this.initDef中去，有相同的就会覆盖
         // this.lastEvent = lastEvent()
         this.aliyunOptions = aliyunOptions;
+        // this.userAgent = parser.getResult()
+        // console.log(parser.getResult())
         this.installTracker();
     }
     //进行一个默认设置
@@ -359,7 +377,7 @@ class Tracker {
         this.data.trackerParams = data;
         const params = Object.assign(data, {
             currentTime: utcFormat(new Date().getTime()),
-            userAgent: navigator.userAgent,
+            userAgent: "fds"
         });
         // 发送到自己的后台
         let headers = {

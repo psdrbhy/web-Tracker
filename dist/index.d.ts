@@ -51,8 +51,8 @@ interface aliyunParams {
 }
 
 declare class Tracker {
-    data: Options;
-    aliyunOptions?: aliyunParams;
+    private data;
+    private aliyunOptions?;
     constructor(options: Options, aliyunOptions?: aliyunParams);
     private initDef;
     /**

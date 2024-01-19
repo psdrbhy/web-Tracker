@@ -18,6 +18,8 @@
   "author": "aquan",
   "license": "ISC",
   "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@types/ua-parser-js": "^0.7.39",
     "prettier": "3.2.2",
     "rollup": "^4.9.1",
     "rollup-plugin-dts": "^6.1.0",
@@ -25,6 +27,8 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@aliyun-sls/web-track-browser": "^0.3.4"
+    "@aliyun-sls/web-track-browser": "^0.3.4",
+    "@types/ua-parser-js": "^0.7.39",
+    "ua-parser-js": "^1.0.37"
   }
 }

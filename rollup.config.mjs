@@ -3,7 +3,6 @@ import path from 'path'
 import ts from 'rollup-plugin-typescript2'
 import dts from 'rollup-plugin-dts'
 import { fileURLToPath } from 'url'
-
 const __filenameNew = fileURLToPath(import.meta.url)
 
 const __dirnameNew = path.dirname(__filenameNew)
@@ -30,8 +29,8 @@ export default [
 
         ],
         plugins: [
-            ts()
-        ]
+            ts(),
+        ],
     },
     {//声明文件
         input: "./src/core/index.ts",

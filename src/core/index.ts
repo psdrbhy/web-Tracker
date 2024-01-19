@@ -23,14 +23,18 @@ const MouseEventList: string[] = [
   'mouseover',
 ];
 export default class Tracker {
-  public data: Options;
-  public aliyunOptions?: aliyunParams;
+  private data: Options;
+  private aliyunOptions?: aliyunParams;
+
   // public lastEvent: Event;
   constructor(options: Options, aliyunOptions?: aliyunParams) {
     this.data = Object.assign(this.initDef(), options); //把options复制到this.initDef中去，有相同的就会覆盖
     // this.lastEvent = lastEvent()
     this.aliyunOptions = aliyunOptions;
+    // this.userAgent = parser.getResult()
+    // console.log(parser.getResult())
     this.installTracker();
+
   }
   //进行一个默认设置
   private initDef(): DefaultOptions {
@@ -98,10 +102,11 @@ export default class Tracker {
    */
   public reportTracker<T extends ErrorParams>(data: T) {
     //因为第二个参数BodyInit没有json格式
+
     this.data.trackerParams = data;
     const params = Object.assign(data, {
       currentTime: utcFormat(new Date().getTime()),
-      userAgent:navigator.userAgent,
+      userAgent:"fds"
     });
     // 发送到自己的后台
     let headers = {
