@@ -8,7 +8,7 @@ import {
 import { createHistoryEvent } from '../utils/pv';
 import { utcFormat } from '../utils/timeFormat';
 import getAliyun from '../utils/aliyun';
-import { userAction } from '../userAction'
+import { userAction } from '../userAction';
 
 import ErrorTracker from '../error/index';
 // 需要监听的事件
@@ -34,9 +34,8 @@ export default class Tracker {
     // this.userAgent = parser.getResult()
     // console.log(parser.getResult())
     this.installTracker();
-
   }
-  //进行一个默认设置
+  //默认设置
   private initDef(): DefaultOptions {
     // 重写赋值
     window.history['pushState'] = createHistoryEvent('pushState');
@@ -88,12 +87,16 @@ export default class Tracker {
       this.targetKeyReport();
     }
     if (this.data.Error) {
-      const errorTrackerClass = new ErrorTracker(this.reportTracker.bind(this));
-      errorTrackerClass.errorEvent();
+      const errorTrackerObject = new ErrorTracker(
+        this.reportTracker.bind(this),
+      );
+      errorTrackerObject.errorEvent();
     }
     if (this.data.userAction) {
-      const userActionTrackerClass = new userAction(this.reportTracker.bind(this));
-      userActionTrackerClass.eventTracker()
+      const userActionTrackerClass = new userAction(
+        this.reportTracker.bind(this),
+      );
+      userActionTrackerClass.eventTracker();
     }
   }
   /**
@@ -106,18 +109,19 @@ export default class Tracker {
     this.data.trackerParams = data;
     const params = Object.assign(data, {
       currentTime: utcFormat(new Date().getTime()),
-      userAgent:"fds"
+      userAgent: 'fds',
     });
+    console.log(params);
     // 发送到自己的后台
     let headers = {
       type: 'application/x-www-form-urlencoded',
     };
-    let blob = new Blob([JSON.stringify(params)], headers); //转化成二进制然后进行new一个blob对象
+    let blob = new Blob([JSON.stringify(params)], headers); //转化成二进制然后进行new一个blob对象,会把是"undefined"消除
     navigator.sendBeacon(this.data.requestUrl, blob);
     // 如果存在发送到阿里云中去
     if (this.aliyunOptions) {
       let { project, host, logstore } = this.aliyunOptions;
-      console.log(params);
+      // console.log(params);
       getAliyun(project, host, logstore, params);
     }
   }

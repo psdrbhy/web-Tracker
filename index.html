@@ -8,14 +8,15 @@
 </head>
 <script src="./dist//index.js"></script>
 <style>
-    .container{
-        width:800px;
-        height:800px;
+    .container {
+        width: 800px;
+        height: 800px;
         background-color: red;
     }
 </style>
+
 <body>
-    <button target-key="btn">有监听</button>    
+    <button target-key="btn">有监听</button>
 
     <button>没有监听</button>
     <div id="container">
@@ -35,7 +36,7 @@
                 historyTracker: false,
                 domTracker: true,
                 Error: true,
-                userAction:true
+                userAction: true
             },
             {
                 project: 'aquan-tracker',
@@ -67,18 +68,20 @@
         }
         function sendError() {
             let xhr = new XMLHttpRequest();
-            xhr.open('post', '/error', true);
+            xhr.open('get', 'https://example.com/nonexistent-path', true);
             xhr.responseType = 'json';
             xhr.onerror = function (err) {
-                console.log(err);
+                console.log(err,'sfsdffsdffs');
             };
             xhr.send();
+
         }
     </script>
+    <!-- 资源报错测试 -->
     <!-- <script src="/someError.js"></script> -->
     <div class="container">
         <div class="content">
-            
+
         </div>
     </div>
 </body>

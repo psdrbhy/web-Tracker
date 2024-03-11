@@ -23,11 +23,11 @@ export default function getAliyun(
   xhr.setRequestHeader('x-log-apiversion', '0.6.0');
   xhr.setRequestHeader('x-log-bodyrawsize', `${result.length}`);
   xhr.onload = function (res) {
-    console.log('success');
+    console.log('阿里云上报成功');
     console.log(xhr.response);
   };
   xhr.onerror = function (error) {
-    console.log('error');
+    console.log('阿里云上报失败');
     console.log(error);
   };
   xhr.send(body);

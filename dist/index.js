@@ -55,11 +55,11 @@
         xhr.setRequestHeader('x-log-apiversion', '0.6.0');
         xhr.setRequestHeader('x-log-bodyrawsize', `${result.length}`);
         xhr.onload = function (res) {
-            console.log('success');
+            console.log('阿里云上报成功');
             console.log(xhr.response);
         };
         xhr.onerror = function (error) {
-            console.log('error');
+            console.log('阿里云上报失败');
             console.log(error);
         };
         xhr.send(body);
@@ -79,7 +79,7 @@
             else {
                 window.addEventListener('load', () => {
                     this.element();
-                    if (this.emptyPoint > 0) {
+                    if (this.emptyPoint > 16) {
                         let centerElement = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
                         this.reportTracker({
                             kind: 'userAction',
@@ -152,28 +152,26 @@
         XMLHttpRequest.prototype.send = function (body) {
             if (this.logData) {
                 let startTime = Date.now();
-                let handler = (type) => () => {
+                let handler = (type) => (event) => {
                     let duration = Date.now() - startTime;
                     let status = this.status;
                     let statusText = this.statusText;
                     let data = {
-                        trackerType: 'xhr',
-                        eventType: type,
-                        targetKey: 'message',
+                        trackerType: 'xhrError',
+                        eventType: event.type,
                         method: this.logData.method,
                         url: this.logData.url,
                         status: status,
                         statusText: statusText,
                         duration: duration,
                         response: this.response ? JSON.stringify(this.response) : '',
-                        params: body,
+                        params: body || '',
                     };
                     handlerReport(data);
-                    console.log("fdsffdsa");
                 };
-                this.addEventListener('error', handler('error'), false);
-                this.addEventListener('load', handler('load'), false);
-                this.addEventListener('abort', handler('abort'), false);
+                this.addEventListener('error', handler(), false);
+                this.addEventListener('load', handler(), false);
+                this.addEventListener('abort', handler(), false);
             }
             return oldSend.call(this, body);
         };
@@ -214,7 +212,7 @@
          */
         resourceError() {
             window.addEventListener('error', (event) => {
-                console.log(event);
+                // console.log(event);
                 const target = event.target;
                 if (target && target.src) {
                     this.reportTracker({
@@ -239,6 +237,7 @@
                 let position;
                 let stack;
                 let reason = event.reason;
+                //判断resolve或者reject传递的是什么，如果只是字符串就直接返回了
                 if (typeof reason === 'string') {
                     message = reason;
                 }
@@ -247,6 +246,7 @@
                         message = reason.message;
                         let matchResult = reason.stack.match(/(?:at\s+)?(http:\/\/[^\s]+\/[^\s]+):(\d+:\d+)/);
                         stack = this.getLine(reason.stack, 3);
+                        console.log(matchResult, 'matchResult');
                         fileName = matchResult[1];
                         position = matchResult[2];
                     }
@@ -271,10 +271,9 @@
         httpError() {
             const handler = (xhrTrackerData) => {
                 // 大于400才进行上报
-                // console.log(xhrTrackerData)
                 if (xhrTrackerData.status < 400)
                     return;
-                this.reportTracker(Object.assign({ kind: 'ajax' }, xhrTrackerData));
+                this.reportTracker(Object.assign({ kind: 'error' }, xhrTrackerData));
             };
             xhrTracker(handler);
         }
@@ -321,7 +320,7 @@
             // console.log(parser.getResult())
             this.installTracker();
         }
-        //进行一个默认设置
+        //默认设置
         initDef() {
             // 重写赋值
             window.history['pushState'] = createHistoryEvent('pushState');
@@ -366,8 +365,8 @@
                 this.targetKeyReport();
             }
             if (this.data.Error) {
-                const errorTrackerClass = new ErrorTracker(this.reportTracker.bind(this));
-                errorTrackerClass.errorEvent();
+                const errorTrackerObject = new ErrorTracker(this.reportTracker.bind(this));
+                errorTrackerObject.errorEvent();
             }
             if (this.data.userAction) {
                 const userActionTrackerClass = new userAction(this.reportTracker.bind(this));
@@ -383,18 +382,19 @@
             this.data.trackerParams = data;
             const params = Object.assign(data, {
                 currentTime: utcFormat(new Date().getTime()),
-                userAgent: "fds"
+                userAgent: 'fds',
             });
+            console.log(params);
             // 发送到自己的后台
             let headers = {
                 type: 'application/x-www-form-urlencoded',
             };
-            let blob = new Blob([JSON.stringify(params)], headers); //转化成二进制然后进行new一个blob对象
+            let blob = new Blob([JSON.stringify(params)], headers); //转化成二进制然后进行new一个blob对象,会把是"undefined"消除
             navigator.sendBeacon(this.data.requestUrl, blob);
             // 如果存在发送到阿里云中去
             if (this.aliyunOptions) {
                 let { project, host, logstore } = this.aliyunOptions;
-                console.log(params);
+                // console.log(params);
                 getAliyun(project, host, logstore, params);
             }
         }

@@ -16,7 +16,7 @@ export class blankScreenTracker {
     } else {
       window.addEventListener('load', () => {
         this.element();
-        if (this.emptyPoint > 0) {
+        if (this.emptyPoint > 16) {
           let centerElement = document.elementFromPoint(
             window.innerWidth / 2,
             window.innerHeight / 2,

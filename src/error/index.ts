@@ -45,7 +45,7 @@ export default class ErrorTracker {
     window.addEventListener(
       'error',
       (event: Event) => {
-        console.log(event);
+        // console.log(event);
         const target = event.target as HTMLScriptElement;
         if (target && target.src) {
           this.reportTracker({
@@ -72,6 +72,7 @@ export default class ErrorTracker {
       let position: string;
       let stack: string;
       let reason = event.reason;
+      //判断resolve或者reject传递的是什么，如果只是字符串就直接返回了
       if (typeof reason === 'string') {
         message = reason;
       } else if (typeof reason === 'object') {
@@ -81,6 +82,7 @@ export default class ErrorTracker {
             /(?:at\s+)?(http:\/\/[^\s]+\/[^\s]+):(\d+:\d+)/,
           );
           stack = this.getLine(reason.stack, 3);
+          console.log(matchResult, 'matchResult');
           fileName = matchResult[1];
           position = matchResult[2];
         }
@@ -105,10 +107,9 @@ export default class ErrorTracker {
   private httpError() {
     const handler = (xhrTrackerData: XhrTrackerData) => {
       // 大于400才进行上报
-      // console.log(xhrTrackerData)
       if (xhrTrackerData.status < 400) return;
       this.reportTracker({
-        kind: 'ajax',
+        kind: 'error',
         ...xhrTrackerData,
       });
     };

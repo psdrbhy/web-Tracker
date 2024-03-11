@@ -7,13 +7,12 @@
  * @url       请求地址
  * @status    请求状态码
  * @statusText 状态信息
- * @duration  请求花费时间
+ * @duration  请求的实际时间
  * @response   响应体
  */
 interface DefaultXhrTrackerData{
     trackerType: string | undefined,
     eventType:string | undefined,
-    targetKey: string | undefined,
     method: string | undefined,
     url:string | URL | undefined,
     status: number,
