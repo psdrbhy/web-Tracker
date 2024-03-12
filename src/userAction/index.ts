@@ -1,5 +1,6 @@
-import { blankScreenTracker } from './blankScreen'
+import { BlankScreenTracker } from './BlankScreen'
 import { ReportTracker } from '../types/error';
+import targetKeyReport from './Dom'
 export class userAction {
     private reportTracker: ReportTracker;
     constructor(reportTracker: ReportTracker) {
@@ -11,6 +12,9 @@ export class userAction {
     }
 
     public blankScreen() {
-        new blankScreenTracker(this.reportTracker)
+        new BlankScreenTracker(this.reportTracker)
+    }
+    public Dom() {
+        targetKeyReport(this.reportTracker)
     }
 }

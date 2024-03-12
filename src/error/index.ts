@@ -25,7 +25,6 @@ export default class ErrorTracker {
           this.reportTracker({
             kind: 'error',
             trackerType: 'JsError',
-            targetKey: 'message',
             message: event.message,
             fileName: event.filename,
             position: `line:${event.lineno},col:${event.colno}`,
@@ -51,7 +50,6 @@ export default class ErrorTracker {
           this.reportTracker({
             kind: 'error',
             trackerType: 'resourceError',
-            targetKey: 'message',
             fileName: target.src,
             tagName: target.tagName,
             Html: target.outerHTML,
@@ -91,7 +89,6 @@ export default class ErrorTracker {
         this.reportTracker({
           kind: 'error',
           trackerType: 'PromiseError',
-          targetKey: 'message',
           url: location.pathname,
           message,
           fileName,

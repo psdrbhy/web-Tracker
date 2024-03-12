@@ -1,5 +1,5 @@
 import { ReportTracker } from '../types/error';
-export class blankScreenTracker {
+export class BlankScreenTracker {
   private emptyPoint: number;
   private reportTracker: ReportTracker;
   constructor(reportTracker: ReportTracker) {
@@ -11,12 +11,13 @@ export class blankScreenTracker {
     // this.element()
   }
   private load() {
+    // 页面状态为complete才进行
     if (document.readyState === 'complete') {
       this.element();
     } else {
       window.addEventListener('load', () => {
         this.element();
-        if (this.emptyPoint > 16) {
+        if (this.emptyPoint > 8) {
           let centerElement = document.elementFromPoint(
             window.innerWidth / 2,
             window.innerHeight / 2,
@@ -33,6 +34,7 @@ export class blankScreenTracker {
       });
     }
   }
+ 
   private element() {
     for (let i = 0; i < 9; i++) {
       let XElement = document.elementFromPoint(
@@ -47,6 +49,9 @@ export class blankScreenTracker {
       this.isWrapper(YElement);
     }
   }
+    /**
+   * 判断是否白点
+   */
   private isWrapper(element?: Element | null) {
     let WrapperElement = ['html', 'body', '#container', '.content'];
     let selector = this.getSelector(element) as string;
@@ -58,7 +63,8 @@ export class blankScreenTracker {
     if (element?.id) {
       return '#' + element.id;
     } else if (element?.className) {
-      let className = element.className
+      // 处理一个dom上面class可能多个的问题
+      let className = element.className 
         .split(' ')
         .filter((item) => !!item)
         .join('.');

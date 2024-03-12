@@ -59,7 +59,7 @@ function getAliyun(project, host, logstore, result) {
     xhr.send(body);
 }
 
-class blankScreenTracker {
+class BlankScreenTracker {
     constructor(reportTracker) {
         this.reportTracker = reportTracker;
         this.emptyPoint = 0;
@@ -67,13 +67,14 @@ class blankScreenTracker {
         // this.element()
     }
     load() {
+        // 页面状态为complete才进行
         if (document.readyState === 'complete') {
             this.element();
         }
         else {
             window.addEventListener('load', () => {
                 this.element();
-                if (this.emptyPoint > 16) {
+                if (this.emptyPoint > 8) {
                     let centerElement = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
                     this.reportTracker({
                         kind: 'userAction',
@@ -95,6 +96,9 @@ class blankScreenTracker {
             this.isWrapper(YElement);
         }
     }
+    /**
+   * 判断是否白点
+   */
     isWrapper(element) {
         let WrapperElement = ['html', 'body', '#container', '.content'];
         let selector = this.getSelector(element);
@@ -107,6 +111,7 @@ class blankScreenTracker {
             return '#' + element.id;
         }
         else if (element === null || element === void 0 ? void 0 : element.className) {
+            // 处理一个dom上面class可能多个的问题
             let className = element.className
                 .split(' ')
                 .filter((item) => !!item)
@@ -119,6 +124,39 @@ class blankScreenTracker {
     }
 }
 
+function targetKeyReport(reportTracker) {
+    // 需要监听的事件
+    const MouseEventList = [
+        'click',
+        'dblclick',
+        'contextmenu',
+        'mousedown',
+        'mouseup',
+        'mouseenter',
+        'mouseout',
+        'mouseover',
+    ];
+    MouseEventList.forEach((event) => {
+        window.addEventListener(event, (e) => {
+            const target = e.target;
+            const targetKey = target.getAttribute('target-key');
+            // 看dom上有没有这个属性，如果有就进行上报
+            if (targetKey) {
+                reportTracker({
+                    kind: 'stability',
+                    trackerType: 'domTracker',
+                    event,
+                    targetKey,
+                    // selector:e? getSelector(e) : '' //代表最后一个操作的元素
+                });
+            }
+        }, {
+            capture: true, //捕获：为了让获得的是最底层的那个，也是为了实现那个路径的功能
+            passive: true, //性能优化
+        });
+    });
+}
+
 class userAction {
     constructor(reportTracker) {
         this.reportTracker = reportTracker;
@@ -127,7 +165,10 @@ class userAction {
         this.blankScreen();
     }
     blankScreen() {
-        new blankScreenTracker(this.reportTracker);
+        new BlankScreenTracker(this.reportTracker);
+    }
+    Dom() {
+        targetKeyReport(this.reportTracker);
     }
 }
 
@@ -191,7 +232,6 @@ class ErrorTracker {
                 this.reportTracker({
                     kind: 'error',
                     trackerType: 'JsError',
-                    targetKey: 'message',
                     message: event.message,
                     fileName: event.filename,
                     position: `line:${event.lineno},col:${event.colno}`,
@@ -212,7 +252,6 @@ class ErrorTracker {
                 this.reportTracker({
                     kind: 'error',
                     trackerType: 'resourceError',
-                    targetKey: 'message',
                     fileName: target.src,
                     tagName: target.tagName,
                     Html: target.outerHTML,
@@ -249,7 +288,6 @@ class ErrorTracker {
                 this.reportTracker({
                     kind: 'error',
                     trackerType: 'PromiseError',
-                    targetKey: 'message',
                     url: location.pathname,
                     message,
                     fileName,
@@ -293,17 +331,6 @@ class ErrorTracker {
     }
 }
 
-// 需要监听的事件
-const MouseEventList = [
-    'click',
-    'dblclick',
-    'contextmenu',
-    'mousedown',
-    'mouseup',
-    'mouseenter',
-    'mouseout',
-    'mouseover',
-];
 class Tracker {
     // public lastEvent: Event;
     constructor(options, aliyunOptions) {
@@ -355,9 +382,6 @@ class Tracker {
         if (this.data.hashTracker) {
             this.captureEvents(['hashchange'], 'hash-pv');
         }
-        if (this.data.domTracker) {
-            this.targetKeyReport();
-        }
         if (this.data.Error) {
             const errorTrackerObject = new ErrorTracker(this.reportTracker.bind(this));
             errorTrackerObject.errorEvent();
@@ -365,6 +389,9 @@ class Tracker {
         if (this.data.userAction) {
             const userActionTrackerClass = new userAction(this.reportTracker.bind(this));
             userActionTrackerClass.eventTracker();
+            if (this.data.domTracker) {
+                userActionTrackerClass.Dom();
+            }
         }
     }
     /**
@@ -391,28 +418,6 @@ class Tracker {
             // console.log(params);
             getAliyun(project, host, logstore, params);
         }
-    }
-    //DOM事件上报：分出来写
-    targetKeyReport() {
-        MouseEventList.forEach((event) => {
-            window.addEventListener(event, (e) => {
-                const target = e.target;
-                const targetKey = target.getAttribute('target-key');
-                // 看dom上有没有这个属性，如果有就进行上报
-                if (targetKey) {
-                    this.reportTracker({
-                        kind: 'stability',
-                        trackerType: 'domTracker',
-                        event,
-                        targetKey,
-                        // selector:e? getSelector(e) : '' //代表最后一个操作的元素
-                    });
-                }
-            }, {
-                capture: true, //捕获：为了让获得的是最底层的那个，也是为了实现那个路径的功能
-                passive: true, //性能优化
-            });
-        });
     }
     /**
      * 手动上报

@@ -68,7 +68,6 @@ declare class Tracker {
      * @param data 传入的数据
      */
     reportTracker<T extends ErrorParams>(data: T): void;
-    private targetKeyReport;
     /**
      * 手动上报
      */

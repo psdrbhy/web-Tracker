@@ -9,19 +9,7 @@ import { createHistoryEvent } from '../utils/pv';
 import { utcFormat } from '../utils/timeFormat';
 import getAliyun from '../utils/aliyun';
 import { userAction } from '../userAction';
-
 import ErrorTracker from '../error/index';
-// 需要监听的事件
-const MouseEventList: string[] = [
-  'click',
-  'dblclick',
-  'contextmenu',
-  'mousedown',
-  'mouseup',
-  'mouseenter',
-  'mouseout',
-  'mouseover',
-];
 export default class Tracker {
   private data: Options;
   private aliyunOptions?: aliyunParams;
@@ -83,9 +71,6 @@ export default class Tracker {
     if (this.data.hashTracker) {
       this.captureEvents(['hashchange'], 'hash-pv');
     }
-    if (this.data.domTracker) {
-      this.targetKeyReport();
-    }
     if (this.data.Error) {
       const errorTrackerObject = new ErrorTracker(
         this.reportTracker.bind(this),
@@ -97,6 +82,9 @@ export default class Tracker {
         this.reportTracker.bind(this),
       );
       userActionTrackerClass.eventTracker();
+      if (this.data.domTracker) {
+        userActionTrackerClass.Dom();
+      }
     }
   }
   /**
@@ -125,34 +113,6 @@ export default class Tracker {
       getAliyun(project, host, logstore, params);
     }
   }
-
-  //DOM事件上报：分出来写
-  private targetKeyReport() {
-    MouseEventList.forEach((event) => {
-      window.addEventListener(
-        event,
-        (e) => {
-          const target = e.target as HTMLElement;
-          const targetKey = target.getAttribute('target-key');
-          // 看dom上有没有这个属性，如果有就进行上报
-          if (targetKey) {
-            this.reportTracker({
-              kind: 'stability',
-              trackerType: 'domTracker',
-              event,
-              targetKey,
-              // selector:e? getSelector(e) : '' //代表最后一个操作的元素
-            });
-          }
-        },
-        {
-          capture: true, //捕获：为了让获得的是最底层的那个，也是为了实现那个路径的功能
-          passive: true, //性能优化
-        },
-      );
-    });
-  }
-
   /**
    * 手动上报
    */

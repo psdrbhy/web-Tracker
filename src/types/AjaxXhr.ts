@@ -2,7 +2,6 @@
 /**
  * @trackerType 监控类型
  * @eventType 具体类型
- * @targetKey  dfs
  * @ method    请求方法
  * @url       请求地址
  * @status    请求状态码
