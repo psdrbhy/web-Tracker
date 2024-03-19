@@ -10,6 +10,7 @@ import { utcFormat } from '../utils/timeFormat';
 import getAliyun from '../utils/aliyun';
 import { userAction } from '../userAction';
 import ErrorTracker from '../error/index';
+import PerformanceTracker from '../performance/index';
 export default class Tracker {
   private data: Options;
   private aliyunOptions?: aliyunParams;
@@ -20,7 +21,6 @@ export default class Tracker {
     // this.lastEvent = lastEvent()
     this.aliyunOptions = aliyunOptions;
     // this.userAgent = parser.getResult()
-    // console.log(parser.getResult())
     this.installTracker();
   }
   //默认设置
@@ -34,6 +34,7 @@ export default class Tracker {
       hashTracker: false,
       domTracker: false,
       Error: false,
+      performance: false,
     };
   }
   /**
@@ -86,20 +87,26 @@ export default class Tracker {
         userActionTrackerClass.Dom();
       }
     }
+    if (this.data.performance) {
+      console.log("开启了performance")
+      const performanceTrackerObject = new PerformanceTracker(
+        this.reportTracker.bind(this),
+      );
+      performanceTrackerObject.performanceEvent()
+    }
   }
   /**
    * 上报监控数据给后台
    * @param data 传入的数据
    */
-  public reportTracker<T extends ErrorParams>(data: T) {
+  public reportTracker<T extends Record<string, any>>(data: T) {
     //因为第二个参数BodyInit没有json格式
-
-    this.data.trackerParams = data;
-    const params = Object.assign(data, {
+    console.log(data)
+    const params = Object.assign({data}, {
       currentTime: utcFormat(new Date().getTime()),
       userAgent: 'fds',
     });
-    console.log(params);
+    console.log(params,"params");
     // 发送到自己的后台
     let headers = {
       type: 'application/x-www-form-urlencoded',
@@ -109,7 +116,6 @@ export default class Tracker {
     // 如果存在发送到阿里云中去
     if (this.aliyunOptions) {
       let { project, host, logstore } = this.aliyunOptions;
-      // console.log(params);
       getAliyun(project, host, logstore, params);
     }
   }

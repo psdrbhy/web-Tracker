@@ -56,11 +56,9 @@
         xhr.setRequestHeader('x-log-bodyrawsize', `${result.length}`);
         xhr.onload = function (res) {
             console.log('阿里云上报成功');
-            console.log(xhr.response);
         };
         xhr.onerror = function (error) {
             console.log('阿里云上报失败');
-            console.log(error);
         };
         xhr.send(body);
     }
@@ -252,7 +250,6 @@
          */
         resourceError() {
             window.addEventListener('error', (event) => {
-                // console.log(event);
                 const target = event.target;
                 if (target && target.src) {
                     this.reportTracker({
@@ -285,7 +282,6 @@
                         message = reason.message;
                         let matchResult = reason.stack.match(/(?:at\s+)?(http:\/\/[^\s]+\/[^\s]+):(\d+:\d+)/);
                         stack = this.getLine(reason.stack, 3);
-                        console.log(matchResult, 'matchResult');
                         fileName = matchResult[1];
                         position = matchResult[2];
                     }
@@ -337,6 +333,120 @@
         }
     }
 
+    function ResourceFlow() {
+        const resouceDatas = performance.getEntriesByType('resource');
+        return resouceDatas.map((resourceData) => {
+            console.log(resouceDatas, "sfsfs");
+            const { name, transferSize, initiatorType, startTime, responseEnd, domainLookupEnd, domainLookupStart, connectStart, connectEnd, secureConnectionStart, responseStart, requestStart, } = resourceData;
+            return {
+                name,
+                initiatorType,
+                transferSize,
+                start: startTime,
+                end: responseEnd,
+                DNS: domainLookupEnd - domainLookupStart,
+                TCP: connectEnd - connectStart,
+                SSL: connectEnd - secureConnectionStart,
+                TTFB: responseStart - requestStart,
+                Trans: responseEnd - requestStart,
+            };
+        });
+    }
+    console.log("pp");
+
+    function loadingData() {
+        const loadingData = performance.getEntriesByType('navigation')[0];
+        console.log(loadingData);
+        const { domainLookupStart, domainLookupEnd, connectStart, connectEnd, secureConnectionStart, requestStart, responseStart, responseEnd, domInteractive, domContentLoadedEventEnd, loadEventStart, fetchStart, } = loadingData;
+        return {
+            DNS: {
+                start: domainLookupStart,
+                end: domainLookupEnd,
+                value: domainLookupEnd - domainLookupStart,
+            },
+            TCP: {
+                start: connectStart,
+                end: connectEnd,
+                value: connectEnd - connectStart,
+            },
+            SSL: {
+                start: secureConnectionStart !== null && secureConnectionStart !== void 0 ? secureConnectionStart : 0,
+                end: secureConnectionStart ? connectEnd : 0,
+                value: secureConnectionStart ? connectEnd - secureConnectionStart : 0,
+            },
+            TTFB: {
+                start: requestStart,
+                end: responseStart,
+                value: responseStart - requestStart,
+            },
+            Trans: {
+                start: responseStart,
+                end: responseEnd,
+                value: responseEnd - responseStart,
+            },
+            FP: {
+                start: fetchStart,
+                end: responseEnd,
+                value: responseEnd - fetchStart,
+            },
+            DomParse: {
+                start: responseEnd,
+                end: domInteractive,
+                value: domInteractive - responseEnd,
+            },
+            TTI: {
+                start: fetchStart,
+                end: domInteractive,
+                value: domInteractive - fetchStart,
+            },
+            DomReady: {
+                start: fetchStart,
+                end: domContentLoadedEventEnd,
+                value: domContentLoadedEventEnd - fetchStart,
+            },
+            Res: {
+                start: responseEnd,
+                end: loadEventStart,
+                value: loadEventStart - responseEnd,
+            },
+            Load: {
+                start: fetchStart,
+                end: loadEventStart,
+                value: loadEventStart - fetchStart,
+            },
+        };
+    }
+
+    class PerformanceTracker {
+        constructor(reportTracker) {
+            this.reportTracker = reportTracker;
+        }
+        performanceEvent() {
+            // window.addEventListener('load', () => {
+            //   setTimeout(() => {
+            //   }, 3000);
+            // });
+            this.getResouceFlow();
+            this.getloading();
+        }
+        /**
+         * 获取dom流
+         *
+         */
+        getResouceFlow() {
+            ResourceFlow();
+            // console.log(reuslt,"result,ressult")
+        }
+        /**
+       * 获取各类loading时间
+       *
+       */
+        getloading() {
+            loadingData();
+            // console.log(result,"resultresultresultresultresultresultresult")
+        }
+    }
+
     class Tracker {
         // public lastEvent: Event;
         constructor(options, aliyunOptions) {
@@ -344,7 +454,6 @@
             // this.lastEvent = lastEvent()
             this.aliyunOptions = aliyunOptions;
             // this.userAgent = parser.getResult()
-            // console.log(parser.getResult())
             this.installTracker();
         }
         //默认设置
@@ -358,6 +467,7 @@
                 hashTracker: false,
                 domTracker: false,
                 Error: false,
+                performance: false,
             };
         }
         /**
@@ -399,6 +509,11 @@
                     userActionTrackerClass.Dom();
                 }
             }
+            if (this.data.performance) {
+                console.log("开启了performance");
+                const performanceTrackerObject = new PerformanceTracker(this.reportTracker.bind(this));
+                performanceTrackerObject.performanceEvent();
+            }
         }
         /**
          * 上报监控数据给后台
@@ -406,12 +521,12 @@
          */
         reportTracker(data) {
             //因为第二个参数BodyInit没有json格式
-            this.data.trackerParams = data;
-            const params = Object.assign(data, {
+            console.log(data);
+            const params = Object.assign({ data }, {
                 currentTime: utcFormat(new Date().getTime()),
                 userAgent: 'fds',
             });
-            console.log(params);
+            console.log(params, "params");
             // 发送到自己的后台
             let headers = {
                 type: 'application/x-www-form-urlencoded',
@@ -421,7 +536,6 @@
             // 如果存在发送到阿里云中去
             if (this.aliyunOptions) {
                 let { project, host, logstore } = this.aliyunOptions;
-                // console.log(params);
                 getAliyun(project, host, logstore, params);
             }
         }

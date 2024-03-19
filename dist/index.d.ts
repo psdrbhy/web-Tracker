@@ -16,8 +16,8 @@ interface DefaultOptions {
     sdkVersion: string | number;
     extra: Record<string, any> | undefined;
     Error: boolean;
-    trackerParams: ErrorParams | string;
     userAction: boolean;
+    performance: boolean;
 }
 interface Options extends Partial<DefaultOptions> {
     requestUrl: string;
@@ -67,7 +67,7 @@ declare class Tracker {
      * 上报监控数据给后台
      * @param data 传入的数据
      */
-    reportTracker<T extends ErrorParams>(data: T): void;
+    reportTracker<T extends Record<string, any>>(data: T): void;
     /**
      * 手动上报
      */
