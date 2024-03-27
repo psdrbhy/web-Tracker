@@ -1,10 +1,8 @@
-
-
 import { type LoadingData } from '../types/performance';
 
 export function loadingData(): LoadingData {
-    const loadingData:any = performance.getEntriesByType('navigation')[0]
-    console.log(loadingData)
+  const loadingData: any = performance.getEntriesByType('navigation')[0];
+  console.log(loadingData);
   const {
     domainLookupStart,
     domainLookupEnd,
@@ -78,4 +76,3 @@ export function loadingData(): LoadingData {
     },
   };
 }
-

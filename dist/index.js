@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-    typeof define === 'function' && define.amd ? define(factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Tracker = factory());
-})(this, (function () { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('web-vitals')) :
+    typeof define === 'function' && define.amd ? define(['web-vitals'], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Tracker = factory(global.webVitals));
+})(this, (function (webVitals) { 'use strict';
 
     var TrackerConfig;
     (function (TrackerConfig) {
@@ -417,6 +417,45 @@
         };
     }
 
+    function WebVitals() {
+        console.log("sssssssssssssssssssss");
+        console.log(webVitals.onCLS);
+        let data;
+        webVitals.onCLS((metricData) => {
+            data.CLS = {
+                name: metricData.name,
+                value: metricData.value,
+                rating: metricData.rating,
+            };
+            console.log(metricData);
+        });
+        webVitals.onFCP((metricData) => {
+            data.FCP = {
+                name: metricData.name,
+                value: metricData.value,
+                rating: metricData.rating,
+            };
+            console.log(metricData);
+        });
+        webVitals.onLCP((metricData) => {
+            data.LCP = {
+                name: metricData.name,
+                value: metricData.value,
+                rating: metricData.rating,
+            };
+            console.log(metricData);
+        });
+        webVitals.onFID((metricData) => {
+            data.FID = {
+                name: metricData.name,
+                value: metricData.value,
+                rating: metricData.rating,
+            };
+            console.log(metricData);
+        });
+        return data;
+    }
+
     class PerformanceTracker {
         constructor(reportTracker) {
             this.reportTracker = reportTracker;
@@ -428,6 +467,7 @@
             // });
             this.getResouceFlow();
             this.getloading();
+            this.getWebVitals();
         }
         /**
          * 获取dom流
@@ -444,6 +484,10 @@
         getloading() {
             loadingData();
             // console.log(result,"resultresultresultresultresultresultresult")
+        }
+        getWebVitals() {
+            const result = WebVitals();
+            console.log(result);
         }
     }
 

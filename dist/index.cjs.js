@@ -1,5 +1,7 @@
 'use strict';
 
+var webVitals = require('web-vitals');
+
 var TrackerConfig;
 (function (TrackerConfig) {
     TrackerConfig["version"] = "1.0.0";
@@ -413,6 +415,45 @@ function loadingData() {
     };
 }
 
+function WebVitals() {
+    console.log("sssssssssssssssssssss");
+    console.log(webVitals.onCLS);
+    let data;
+    webVitals.onCLS((metricData) => {
+        data.CLS = {
+            name: metricData.name,
+            value: metricData.value,
+            rating: metricData.rating,
+        };
+        console.log(metricData);
+    });
+    webVitals.onFCP((metricData) => {
+        data.FCP = {
+            name: metricData.name,
+            value: metricData.value,
+            rating: metricData.rating,
+        };
+        console.log(metricData);
+    });
+    webVitals.onLCP((metricData) => {
+        data.LCP = {
+            name: metricData.name,
+            value: metricData.value,
+            rating: metricData.rating,
+        };
+        console.log(metricData);
+    });
+    webVitals.onFID((metricData) => {
+        data.FID = {
+            name: metricData.name,
+            value: metricData.value,
+            rating: metricData.rating,
+        };
+        console.log(metricData);
+    });
+    return data;
+}
+
 class PerformanceTracker {
     constructor(reportTracker) {
         this.reportTracker = reportTracker;
@@ -424,6 +465,7 @@ class PerformanceTracker {
         // });
         this.getResouceFlow();
         this.getloading();
+        this.getWebVitals();
     }
     /**
      * 获取dom流
@@ -440,6 +482,10 @@ class PerformanceTracker {
     getloading() {
         loadingData();
         // console.log(result,"resultresultresultresultresultresultresult")
+    }
+    getWebVitals() {
+        const result = WebVitals();
+        console.log(result);
     }
 }
 

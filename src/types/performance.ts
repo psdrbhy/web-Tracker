@@ -35,3 +35,16 @@ export interface ResourceFlow {
     Res: { start: number; end: number; value: number };
     Load: { start: number; end: number; value: number };
   }
+
+  interface MetricDataDetail{
+    name: string
+    value: number
+    rating: string
+  }
+
+  export interface MetricData {
+    FCP:MetricDataDetail,
+    LCP:MetricDataDetail,
+    FID:MetricDataDetail,
+    CLS:MetricDataDetail
+  }

@@ -1,6 +1,7 @@
 import { ReportTracker } from '../types/performance';
 import {ResourceFlow} from './resource'
 import {loadingData} from './loading'
+import {WebVitals} from './performance'
 export default class PerformanceTracker {
   private reportTracker: ReportTracker;
   private performanceData:object;
@@ -16,6 +17,7 @@ export default class PerformanceTracker {
     // });
     this.getResouceFlow()
     this.getloading()
+    this.getWebVitals()
   }
   /**
    * 获取dom流
@@ -32,5 +34,9 @@ export default class PerformanceTracker {
   public getloading(){
     const result = loadingData()
     // console.log(result,"resultresultresultresultresultresultresult")
+  }
+  public getWebVitals(){
+    const result = WebVitals()
+    console.log(result)
   }
 }
