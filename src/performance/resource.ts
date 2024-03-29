@@ -33,5 +33,3 @@ export function ResourceFlow():ResourceFlow[] {
       };
     });
   }
-
-console.log("pp")

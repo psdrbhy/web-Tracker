@@ -352,7 +352,6 @@
             };
         });
     }
-    console.log("pp");
 
     function loadingData() {
         const loadingData = performance.getEntriesByType('navigation')[0];
@@ -417,43 +416,68 @@
         };
     }
 
+    // import {
+    //   onFCP,
+    //   onCLS,
+    //   onLCP,
+    //   onFID,
+    //   type FCPMetric,
+    //   type LCPMetric,
+    //   type FIDMetric,
+    //   type CLSMetric,
+    // } from 'web-vitals';
     function WebVitals() {
-        console.log("sssssssssssssssssssss");
-        console.log(webVitals.onCLS);
         let data;
-        webVitals.onCLS((metricData) => {
-            data.CLS = {
-                name: metricData.name,
-                value: metricData.value,
-                rating: metricData.rating,
-            };
-            console.log(metricData);
-        });
-        webVitals.onFCP((metricData) => {
-            data.FCP = {
-                name: metricData.name,
-                value: metricData.value,
-                rating: metricData.rating,
-            };
-            console.log(metricData);
-        });
-        webVitals.onLCP((metricData) => {
-            data.LCP = {
-                name: metricData.name,
-                value: metricData.value,
-                rating: metricData.rating,
-            };
-            console.log(metricData);
-        });
-        webVitals.onFID((metricData) => {
-            data.FID = {
-                name: metricData.name,
-                value: metricData.value,
-                rating: metricData.rating,
-            };
-            console.log(metricData);
-        });
+        console.log(webVitals.onCLS);
+        // onCLS((metricData: CLSMetric) => {
+        //   data.CLS = {
+        //     name: metricData.name,
+        //     value: metricData.value,
+        //     rating: metricData.rating,
+        //   };
+        //   console.log(metricData);
+        // })
+        // onFCP((metricData: FCPMetric) => {
+        //   data.FCP = {
+        //     name: metricData.name,
+        //     value: metricData.value,
+        //     rating: metricData.rating,
+        //   };
+        //   console.log(metricData);
+        // })
+        // onLCP((metricData: LCPMetric) => {
+        //   data.LCP = {
+        //     name: metricData.name,
+        //     value: metricData.value,
+        //     rating: metricData.rating,
+        //   };
+        //   console.log(metricData);
+        // });
+        // onFID((metricData: FIDMetric) => {
+        //   data.FID = {
+        //     name: metricData.name,
+        //     value: metricData.value,
+        //     rating: metricData.rating,
+        //   };
+        //   console.log(metricData);
+        // });
         return data;
+    }
+
+    function CacheData() {
+        const resourceDatas = performance.getEntriesByType('resource');
+        let cacheHitQuantity = 0;
+        resourceDatas.forEach((resourceData) => {
+            if (resourceData.deliveryType === 'cache')
+                cacheHitQuantity++;
+            else if (resourceData.duration === 0 && resourceData.transferSize !== 0)
+                cacheHitQuantity++;
+        });
+        return {
+            cacheHitQuantity,
+            noCacheHitQuantity: resourceDatas.length - cacheHitQuantity,
+            cacheHitRate: (cacheHitQuantity / resourceDatas.length).toFixed(2),
+        };
     }
 
     class PerformanceTracker {
@@ -488,6 +512,9 @@
         getWebVitals() {
             const result = WebVitals();
             console.log(result);
+        }
+        getCache() {
+            CacheData();
         }
     }
 

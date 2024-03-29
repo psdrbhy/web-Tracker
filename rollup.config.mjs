@@ -27,15 +27,15 @@ export default [{
                 file: path.resolve(__dirnameNew, './dist/index.js'),
                 format: "umd",
                 name: "Tracker",
-                globals: {
-                    'web-vitals': 'webVitals'
-                }
+                // globals: {
+                //     'web-vitals': 'webVitals'
+                // }
             },
         ],
         plugins: [
             ts(),
         ],
-        external: ['web-vitals']
+        // external: ['web-vitals']
     },
     { //声明文件
         input: "./src/core/index.ts",
