@@ -73,10 +73,7 @@ export default class Tracker {
       this.captureEvents(['hashchange'], 'hash-pv');
     }
     if (this.data.Error) {
-      const errorTrackerObject = new ErrorTracker(
-        this.reportTracker.bind(this),
-      );
-      errorTrackerObject.errorEvent();
+      new ErrorTracker(this.reportTracker.bind(this));
     }
     if (this.data.userAction) {
       const userActionTrackerClass = new userAction(
@@ -88,11 +85,8 @@ export default class Tracker {
       }
     }
     if (this.data.performance) {
-      console.log("开启了performance")
-      const performanceTrackerObject = new PerformanceTracker(
-        this.reportTracker.bind(this),
-      );
-      performanceTrackerObject.performanceEvent()
+      new PerformanceTracker(this.reportTracker.bind(this));
+      // performanceTrackerObject.performanceEvent()
     }
   }
   /**
@@ -101,12 +95,16 @@ export default class Tracker {
    */
   public reportTracker<T extends Record<string, any>>(data: T) {
     //因为第二个参数BodyInit没有json格式
-    console.log(data)
-    const params = Object.assign({data}, {
-      currentTime: utcFormat(new Date().getTime()),
-      userAgent: 'fds',
-    });
-    console.log(params,"params");
+    console.log(data,"传入的数据");
+    const params = Object.assign(
+      { data },
+      {
+        currentTime: utcFormat(new Date().getTime()),
+        userAgent: 'fds',
+      },
+    );
+
+    console.log(params, '添加了之后的params');
     // 发送到自己的后台
     let headers = {
       type: 'application/x-www-form-urlencoded',

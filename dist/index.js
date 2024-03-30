@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('web-vitals')) :
-    typeof define === 'function' && define.amd ? define(['web-vitals'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Tracker = factory(global.webVitals));
-})(this, (function (webVitals) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+    typeof define === 'function' && define.amd ? define(factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Tracker = factory());
+})(this, (function () { 'use strict';
 
     var TrackerConfig;
     (function (TrackerConfig) {
@@ -219,6 +219,7 @@
     class ErrorTracker {
         constructor(reportTracker) {
             this.reportTracker = reportTracker;
+            this.errorEvent();
         }
         errorEvent() {
             this.jsError();
@@ -333,7 +334,7 @@
         }
     }
 
-    function ResourceFlow() {
+    function resourceFlow() {
         const resouceDatas = performance.getEntriesByType('resource');
         return resouceDatas.map((resourceData) => {
             console.log(resouceDatas, "sfsfs");
@@ -355,7 +356,6 @@
 
     function loadingData() {
         const loadingData = performance.getEntriesByType('navigation')[0];
-        console.log(loadingData);
         const { domainLookupStart, domainLookupEnd, connectStart, connectEnd, secureConnectionStart, requestStart, responseStart, responseEnd, domInteractive, domContentLoadedEventEnd, loadEventStart, fetchStart, } = loadingData;
         return {
             DNS: {
@@ -416,55 +416,7 @@
         };
     }
 
-    // import {
-    //   onFCP,
-    //   onCLS,
-    //   onLCP,
-    //   onFID,
-    //   type FCPMetric,
-    //   type LCPMetric,
-    //   type FIDMetric,
-    //   type CLSMetric,
-    // } from 'web-vitals';
-    function WebVitals() {
-        let data;
-        console.log(webVitals.onCLS);
-        // onCLS((metricData: CLSMetric) => {
-        //   data.CLS = {
-        //     name: metricData.name,
-        //     value: metricData.value,
-        //     rating: metricData.rating,
-        //   };
-        //   console.log(metricData);
-        // })
-        // onFCP((metricData: FCPMetric) => {
-        //   data.FCP = {
-        //     name: metricData.name,
-        //     value: metricData.value,
-        //     rating: metricData.rating,
-        //   };
-        //   console.log(metricData);
-        // })
-        // onLCP((metricData: LCPMetric) => {
-        //   data.LCP = {
-        //     name: metricData.name,
-        //     value: metricData.value,
-        //     rating: metricData.rating,
-        //   };
-        //   console.log(metricData);
-        // });
-        // onFID((metricData: FIDMetric) => {
-        //   data.FID = {
-        //     name: metricData.name,
-        //     value: metricData.value,
-        //     rating: metricData.rating,
-        //   };
-        //   console.log(metricData);
-        // });
-        return data;
-    }
-
-    function CacheData() {
+    function cache() {
         const resourceDatas = performance.getEntriesByType('resource');
         let cacheHitQuantity = 0;
         resourceDatas.forEach((resourceData) => {
@@ -473,48 +425,66 @@
             else if (resourceData.duration === 0 && resourceData.transferSize !== 0)
                 cacheHitQuantity++;
         });
+        const cacheHitRate = cacheHitQuantity !== 0 && resourceDatas.length !== 0 ? parseFloat((cacheHitQuantity / resourceDatas.length * 100).toFixed(2)) : 0;
         return {
             cacheHitQuantity,
             noCacheHitQuantity: resourceDatas.length - cacheHitQuantity,
-            cacheHitRate: (cacheHitQuantity / resourceDatas.length).toFixed(2),
+            cacheHitRate: `${cacheHitRate}%`,
         };
     }
 
     class PerformanceTracker {
         constructor(reportTracker) {
             this.reportTracker = reportTracker;
+            this.performanceEvent();
         }
         performanceEvent() {
-            // window.addEventListener('load', () => {
-            //   setTimeout(() => {
-            //   }, 3000);
-            // });
             this.getResouceFlow();
             this.getloading();
             this.getWebVitals();
+            this.getCache();
+            this.reportPerformance();
         }
         /**
          * 获取dom流
          *
          */
         getResouceFlow() {
-            ResourceFlow();
-            // console.log(reuslt,"result,ressult")
+            this.resouceFlowData = resourceFlow();
         }
         /**
-       * 获取各类loading时间
-       *
-       */
+         * 获取各类loading时间
+         *
+         */
         getloading() {
-            loadingData();
-            // console.log(result,"resultresultresultresultresultresultresult")
+            this.loadingData = loadingData();
         }
+        /**
+         * 获取WebVitals指标
+         *
+         */
         getWebVitals() {
-            const result = WebVitals();
-            console.log(result);
+            // this.webVital = WebVitals();
+            // console.log(this.webVital);
         }
+        /**
+         * 获取缓存
+         *
+         */
         getCache() {
-            CacheData();
+            this.catchData = cache();
+            // console.log( this.catchData, 'resultresultresultresultresultresult');
+        }
+        reportPerformance() {
+            // 将所有数据集中起来
+            this.performanceData = {
+                catchData: this.catchData,
+                loadingData: this.loadingData,
+                resouceFlowData: this.resouceFlowData,
+                webVitalData: this.webVitalData,
+            };
+            this.reportTracker(this.performanceData);
+            console.log(this.performanceData);
         }
     }
 
@@ -570,8 +540,7 @@
                 this.captureEvents(['hashchange'], 'hash-pv');
             }
             if (this.data.Error) {
-                const errorTrackerObject = new ErrorTracker(this.reportTracker.bind(this));
-                errorTrackerObject.errorEvent();
+                new ErrorTracker(this.reportTracker.bind(this));
             }
             if (this.data.userAction) {
                 const userActionTrackerClass = new userAction(this.reportTracker.bind(this));
@@ -581,9 +550,8 @@
                 }
             }
             if (this.data.performance) {
-                console.log("开启了performance");
-                const performanceTrackerObject = new PerformanceTracker(this.reportTracker.bind(this));
-                performanceTrackerObject.performanceEvent();
+                new PerformanceTracker(this.reportTracker.bind(this));
+                // performanceTrackerObject.performanceEvent()
             }
         }
         /**
@@ -592,12 +560,12 @@
          */
         reportTracker(data) {
             //因为第二个参数BodyInit没有json格式
-            console.log(data);
+            console.log(data, "传入的数据");
             const params = Object.assign({ data }, {
                 currentTime: utcFormat(new Date().getTime()),
                 userAgent: 'fds',
             });
-            console.log(params, "params");
+            console.log(params, '添加了之后的params');
             // 发送到自己的后台
             let headers = {
                 type: 'application/x-www-form-urlencoded',

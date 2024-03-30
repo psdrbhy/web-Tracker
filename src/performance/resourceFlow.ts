@@ -1,6 +1,6 @@
 import { type ResourceFlow } from '../types/performance';
 
-export function ResourceFlow():ResourceFlow[] {
+export function resourceFlow():ResourceFlow[] {
     const resouceDatas = performance.getEntriesByType('resource');
     return resouceDatas.map((resourceData:PerformanceResourceTiming) => {
         console.log(resouceDatas,"sfsfs")

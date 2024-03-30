@@ -5,6 +5,7 @@ export default class ErrorTracker {
   private reportTracker: ReportTracker;
   constructor(reportTracker: ReportTracker) {
     this.reportTracker = reportTracker;
+    this.errorEvent();
   }
 
   public errorEvent() {

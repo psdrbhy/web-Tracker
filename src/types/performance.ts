@@ -48,3 +48,9 @@ export interface ResourceFlow {
     FID:MetricDataDetail,
     CLS:MetricDataDetail
   }
+
+  export interface CatchData {
+    cacheHitQuantity:number,
+    noCacheHitQuantity:number,
+    cacheHitRate:string
+  }
