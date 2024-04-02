@@ -3,7 +3,6 @@ import { type ResourceFlow } from '../types/performance';
 export function resourceFlow():ResourceFlow[] {
     const resouceDatas = performance.getEntriesByType('resource');
     return resouceDatas.map((resourceData:PerformanceResourceTiming) => {
-        console.log(resouceDatas,"sfsfs")
       const {
         name,
         transferSize,

@@ -51,7 +51,8 @@ interface aliyunParams {
 }
 
 declare class Tracker {
-    private data;
+    private appId;
+    private options;
     private aliyunOptions?;
     constructor(options: Options, aliyunOptions?: aliyunParams);
     private initDef;
@@ -82,6 +83,11 @@ declare class Tracker {
      * @param extra 透传字段
      */
     setExtra<T extends DefaultOptions['extra']>(extra: T): void;
+    /**
+   * 用来设置应用ID
+   * @param extra 透传字段
+   */
+    setAppId<T extends string>(appId: T): void;
 }
 
 export { Tracker as default };

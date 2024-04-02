@@ -68,6 +68,5 @@ export default class PerformanceTracker {
       webVitalData: this.webVitalData,
     };
     this.reportTracker(this.performanceData)
-    console.log(this.performanceData)
   }
 }

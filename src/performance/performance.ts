@@ -13,7 +13,7 @@ import { onFCP, onCLS, onLCP, onFID } from 'web-vitals';
 import { MetricData } from '../types/performance';
 export function WebVitals() {
   let data: MetricData;
-  console.log(onCLS)
+  // console.log(onCLS)
   // onCLS((metricData: CLSMetric) => {
   //   data.CLS = {
   //     name: metricData.name,

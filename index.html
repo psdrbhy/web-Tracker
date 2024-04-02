@@ -32,7 +32,7 @@
         </div>
     </div>
     <script>
-        new Tracker(
+        const result = new Tracker(
             {
                 requestUrl: 'http://localhost:3000/cs',
                 historyTracker: false,
@@ -47,6 +47,9 @@
                 logstore: 'aquan-logstore',
             },
         );
+        result.setAppId("应用一")
+        result.setUserId("小卢")
+        console.log(result,"result,resultresultresultresultresult")
         // 普通js报错测试
         function errorClick() {
             console.log(t);
