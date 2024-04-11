@@ -20,16 +20,19 @@
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@types/ua-parser-js": "^0.7.39",
+    "bowser": "^2.11.0",
     "prettier": "3.2.2",
     "rollup": "^4.9.1",
     "rollup-plugin-dts": "^6.1.0",
     "rollup-plugin-typescript2": "^0.36.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "ua-parser-js": "^1.0.37"
   },
   "dependencies": {
     "@aliyun-sls/web-track-browser": "^0.3.4",
     "@types/ua-parser-js": "^0.7.39",
-    "ua-parser-js": "^1.0.37",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
     "web-vitals": "^3.5.2"
   }
 }

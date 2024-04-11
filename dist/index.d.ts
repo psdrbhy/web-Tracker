@@ -54,6 +54,8 @@ declare class Tracker {
     private appId;
     private options;
     private aliyunOptions?;
+    private performance;
+    private userAction;
     constructor(options: Options, aliyunOptions?: aliyunParams);
     private initDef;
     /**
@@ -84,9 +86,9 @@ declare class Tracker {
      */
     setExtra<T extends DefaultOptions['extra']>(extra: T): void;
     /**
-   * 用来设置应用ID
-   * @param extra 透传字段
-   */
+     * 用来设置应用ID
+     * @param extra 透传字段
+     */
     setAppId<T extends string>(appId: T): void;
 }
 

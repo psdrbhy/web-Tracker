@@ -8,6 +8,7 @@ import {
   type LoadingData,
   type CatchData,
   type MetricData,
+  MetricDataDetail
 } from '../types/performance';
 export default class PerformanceTracker {
   private reportTracker: ReportTracker;
@@ -15,7 +16,7 @@ export default class PerformanceTracker {
   private resouceFlowData: ResourceFlow[];
   private loadingData: LoadingData;
   private catchData: CatchData;
-  private webVitalData: MetricData;
+  private webVitalData: Record<string, Record<string, any>>;
   constructor(reportTracker: ReportTracker) {
     this.reportTracker = reportTracker;
     this.performanceEvent();
@@ -25,7 +26,7 @@ export default class PerformanceTracker {
     this.getloading();
     this.getWebVitals();
     this.getCache();
-    this.reportPerformance();
+    // this.reportPerformance();
   }
   /**
    * 获取dom流
@@ -45,9 +46,12 @@ export default class PerformanceTracker {
    * 获取WebVitals指标
    *
    */
-  public getWebVitals() {
-    // this.webVital = WebVitals();
-    // console.log(this.webVital);
+  public async getWebVitals() {
+    WebVitals((data)=>{
+      this.webVitalData = data
+      this.reportPerformance()
+    });
+
   }
   /**
    * 获取缓存
@@ -55,12 +59,10 @@ export default class PerformanceTracker {
    */
   public getCache() {
     this.catchData = cache();
-    // console.log( this.catchData, 'resultresultresultresultresultresult');
   }
 
   public reportPerformance() {
     // 将所有数据集中起来
-
     this.performanceData = {
       catchData: this.catchData,
       loadingData: this.loadingData,

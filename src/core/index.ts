@@ -7,20 +7,22 @@ import {
 } from '../types/core';
 import { createHistoryEvent } from '../utils/pv';
 import { utcFormat } from '../utils/timeFormat';
+// import { getPageInformation } from '../userAction/pageInformation';
 import getAliyun from '../utils/aliyun';
 import { userAction } from '../userAction';
 import ErrorTracker from '../error/index';
 import PerformanceTracker from '../performance/index';
 export default class Tracker {
-  private appId:string;
+  private appId: string;
   private options: Options;
   private aliyunOptions?: aliyunParams;
-  // public lastEvent: Event;
+  private performance:PerformanceTracker
+  private userAction:userAction
+  // private userAgent
   constructor(options: Options, aliyunOptions?: aliyunParams) {
-    this.options = Object.assign(this.initDef(), options); //把options复制到this.initDef中去，有相同的就会覆盖
-    // this.lastEvent = lastEvent()
+    this.options = Object.assign(this.initDef(), options);
     this.aliyunOptions = aliyunOptions;
-    // this.userAgent = parser.getResult()
+    // this.userAgent = getPageInformation()
     this.installTracker();
   }
   //默认设置
@@ -76,17 +78,16 @@ export default class Tracker {
       new ErrorTracker(this.reportTracker.bind(this));
     }
     if (this.options.userAction) {
-      const userActionTrackerClass = new userAction(
+      this.userAction = new userAction(
         this.reportTracker.bind(this),
       );
-      userActionTrackerClass.eventTracker();
-      if (this.options.domTracker) {
-        userActionTrackerClass.Dom();
-      }
+      // userActionTrackerClass.eventTracker();
+      // if (this.options.domTracker) {
+      //   userActionTrackerClass.Dom();
+      // }
     }
     if (this.options.performance) {
-      new PerformanceTracker(this.reportTracker.bind(this));
-      // performanceTrackerObject.performanceEvent()
+      this.performance =  new PerformanceTracker(this.reportTracker.bind(this));
     }
   }
   /**
@@ -95,7 +96,7 @@ export default class Tracker {
    */
   public reportTracker<T extends Record<string, any>>(data: T) {
     //因为第二个参数BodyInit没有json格式
- 
+
     const params = Object.assign(
       { data },
       {
@@ -103,7 +104,7 @@ export default class Tracker {
         userAgent: 'fds',
       },
     );
-    console.log(data,"传入的数据");
+    console.log(data, '传入的数据');
     console.log(params, '添加了其他数据之后的params');
     // 发送到自己的后台
     let headers = {
@@ -137,11 +138,11 @@ export default class Tracker {
   public setExtra<T extends DefaultOptions['extra']>(extra: T) {
     this.options.extra = extra;
   }
-    /**
+  /**
    * 用来设置应用ID
    * @param extra 透传字段
    */
-    public setAppId<T extends string>(appId:T) {
-      this.appId = appId;
-    }
+  public setAppId<T extends string>(appId: T) {
+    this.appId = appId;
+  }
 }
