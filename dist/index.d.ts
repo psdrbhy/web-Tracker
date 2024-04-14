@@ -56,6 +56,7 @@ declare class Tracker {
     private aliyunOptions?;
     private performance;
     private userAction;
+    private error;
     constructor(options: Options, aliyunOptions?: aliyunParams);
     private initDef;
     /**

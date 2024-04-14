@@ -1,7 +1,7 @@
 import { type PageInformation } from '../types/userAction';
 import parser from 'ua-parser-js';
 import Bowser from 'bowser';
-export function PageInformation(): PageInformation {
+export function PageInformationTracker(): PageInformation {
   const { host, hostname, href, protocol, origin, port, pathname, search, hash } = window.location;
   const { width, height } = window.screen;
   const { language, userAgent } = navigator as any;

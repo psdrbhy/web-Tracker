@@ -38,14 +38,6 @@ export interface MetricDataDetail {
   value: number;
   rating: string;
 }
-
-// export interface MetricData {
-//   FCP:MetricDataDetail,
-//   LCP:MetricDataDetail,
-//   FID:MetricDataDetail,
-//   CLS:MetricDataDetail
-// }
-
 export interface CatchData {
   cacheHitQuantity: number;
   noCacheHitQuantity: number;
@@ -59,3 +51,20 @@ export enum MetricData {
   CLS = 'CLS',
 }
 
+export interface DefaultOptions {
+  performance:Boolean,
+  cache:Boolean,
+  loading:Boolean,
+  resourceFlow:Boolean
+}
+
+export interface Options extends Partial<DefaultOptions> {
+  
+}
+
+export enum Data{
+  performance = "performance",
+  cache = "cache",
+  loading = 'loading',
+  resourceFlow = 'resourceFlow'
+}

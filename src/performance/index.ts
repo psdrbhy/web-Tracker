@@ -2,53 +2,67 @@ import { resourceFlow } from './resourceFlow';
 import { loadingData } from './loading';
 import { WebVitals } from './performance';
 import { cache } from './cache';
-import { type ReportTracker } from '../types/performance';
+import { type ReportTracker,Options,Data } from '../types/performance';
 import {
   type ResourceFlow,
   type LoadingData,
   type CatchData,
-  type MetricData,
-  MetricDataDetail
 } from '../types/performance';
 export default class PerformanceTracker {
-  private reportTracker: ReportTracker;
-  private performanceData: object;
-  private resouceFlowData: ResourceFlow[];
+  private options:Options
+  private data: Record<Data | string, Record<string, any>>;
+  private resourceFlowData: ResourceFlow[];
   private loadingData: LoadingData;
   private catchData: CatchData;
   private webVitalData: Record<string, Record<string, any>>;
-  constructor(reportTracker: ReportTracker) {
+  private reportTracker: ReportTracker;
+  constructor(options:Options,reportTracker: ReportTracker) {
+    this.options = Object.assign(this.initDef(), options);
+    this.data = {}
     this.reportTracker = reportTracker;
     this.performanceEvent();
+
   }
   public performanceEvent() {
-    this.getResouceFlow();
-    this.getloading();
-    this.getWebVitals();
-    this.getCache();
-    // this.reportPerformance();
+    if(this.options.loading) this.getloading();
+    if(this.options.cache) this.getCache();
+    if(this.options.resourceFlow) this.getResouceFlow();
+    if(this.options.performance) this.getWebVitals();
+
+    
+    this.reportPerformance();
   }
+    //默认设置
+    private initDef() {
+      return {
+        performance:true,
+        cache:true,
+        loading:true,
+        resourceFlow:true
+      };
+    }
   /**
    * 获取dom流
    *
    */
   public getResouceFlow() {
-    this.resouceFlowData = resourceFlow();
+    this.data[Data.resourceFlow] = resourceFlow();
   }
   /**
    * 获取各类loading时间
    *
    */
   public getloading() {
-    this.loadingData = loadingData();
+    this.data[Data.loading] = loadingData();
   }
   /**
    * 获取WebVitals指标
    *
    */
-  public async getWebVitals() {
+  public getWebVitals() {
     WebVitals((data)=>{
-      this.webVitalData = data
+      this.data[Data.performance] = data
+      console.log("全部回调完成")
       this.reportPerformance()
     });
 
@@ -58,17 +72,10 @@ export default class PerformanceTracker {
    *
    */
   public getCache() {
-    this.catchData = cache();
+    this.data[Data.cache] = cache();
   }
 
   public reportPerformance() {
-    // 将所有数据集中起来
-    this.performanceData = {
-      catchData: this.catchData,
-      loadingData: this.loadingData,
-      resouceFlowData: this.resouceFlowData,
-      webVitalData: this.webVitalData,
-    };
-    this.reportTracker(this.performanceData)
+    this.reportTracker(this.data)
   }
 }

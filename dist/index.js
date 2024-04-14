@@ -63,72 +63,7 @@
         xhr.send(body);
     }
 
-    class BlankScreenTracker {
-        constructor(reportTracker) {
-            this.reportTracker = reportTracker;
-            this.emptyPoint = 0;
-            this.load();
-            // this.element()
-        }
-        load() {
-            // 页面状态为complete才进行
-            if (document.readyState === 'complete') {
-                this.element();
-            }
-            else {
-                window.addEventListener('load', () => {
-                    this.element();
-                    if (this.emptyPoint > 8) {
-                        let centerElement = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
-                        this.reportTracker({
-                            kind: 'userAction',
-                            trackerType: 'blank',
-                            emptyPoint: this.emptyPoint,
-                            screen: window.screen.width + 'X' + window.screen.height,
-                            viewPoint: window.innerWidth + 'X' + window.innerHeight,
-                            selector: this.getSelector(centerElement), //放中间元素
-                        });
-                    }
-                });
-            }
-        }
-        element() {
-            for (let i = 0; i < 9; i++) {
-                let XElement = document.elementFromPoint((window.innerWidth * i) / 10, window.innerHeight / 2);
-                let YElement = document.elementFromPoint(window.innerWidth / 2, (window.innerHeight * i) / 10);
-                this.isWrapper(XElement);
-                this.isWrapper(YElement);
-            }
-        }
-        /**
-       * 判断是否白点
-       */
-        isWrapper(element) {
-            let WrapperElement = ['html', 'body', '#container', '.content'];
-            let selector = this.getSelector(element);
-            if (WrapperElement.indexOf(selector) != -1) {
-                this.emptyPoint++;
-            }
-        }
-        getSelector(element) {
-            if (element === null || element === void 0 ? void 0 : element.id) {
-                return '#' + element.id;
-            }
-            else if (element === null || element === void 0 ? void 0 : element.className) {
-                // 处理一个dom上面class可能多个的问题
-                let className = element.className
-                    .split(' ')
-                    .filter((item) => !!item)
-                    .join('.');
-                return '.' + className;
-            }
-            else {
-                return element === null || element === void 0 ? void 0 : element.nodeName.toLowerCase();
-            }
-        }
-    }
-
-    function targetKeyReport(handler, eventTrackedList) {
+    function domTracker(handler, eventTrackedList) {
         // 需要监听的事件
         const MouseEventList = eventTrackedList;
         MouseEventList.forEach((event) => {
@@ -139,13 +74,13 @@
         });
     }
 
-    function trackRouterChange(handler) {
+    function RouterChangeTracker(handler) {
         window.addEventListener('pushState', (e) => handler(e), true);
         window.addEventListener('replaceState', (e) => handler(e), true);
         window.addEventListener('popstate', (e) => handler(e), true);
     }
 
-    function OriginInformation() {
+    function OriginInformationTracker() {
         return {
             referrer: document.referrer,
             type: performance.getEntriesByType('navigation')[0].type,
@@ -3356,7 +3291,7 @@
       }
     }
 
-    function PageInformation() {
+    function PageInformationTracker() {
         var _a, _b;
         const { host, hostname, href, protocol, origin, port, pathname, search, hash } = window.location;
         const { width, height } = window.screen;
@@ -3404,6 +3339,24 @@
         };
     }
 
+    class BehaviorStack {
+        constructor(maxStackLength) {
+            this.maxStackLength = maxStackLength;
+        }
+        set(data) {
+            if (this.behaviorStackList.length == this.maxStackLength) {
+                this.behaviorStackList.shift();
+            }
+            this.behaviorStackList.push(data);
+        }
+        get() {
+            return this.behaviorStackList;
+        }
+        clear() {
+            this.behaviorStackList = [];
+        }
+    }
+
     /**
      * @param href url
      * @param origin 页面来源（返回一个包含协议，域名，端口号的字符串）
@@ -3421,106 +3374,145 @@
      * @param docScreen 文档宽高 (eg:1388x937)   文档宽高意为当前页面显示的实际宽高
      *
      */
-    var Data;
+    var Data$1;
     (function (Data) {
-        Data["DomDataList"] = "DomDataList";
-        Data["RouterChangeList"] = "RouterChangeList";
-        Data["PageInformation"] = "PageInformation";
-        Data["OriginInformation"] = "OriginInformation";
-    })(Data || (Data = {}));
+        Data["Dom"] = "DomDataList";
+        Data["RouterChange"] = "RouterChangeData";
+        Data["PageInfo"] = "PageInfo";
+    })(Data$1 || (Data$1 = {}));
 
     class userAction {
-        constructor(reportTracker) {
-            this.options = this.initDef();
+        constructor(options, reportTracker) {
+            this.options = Object.assign(this.initDef(), options);
             this.data = {};
             this.reportTracker = reportTracker;
+            this.behaviorStack = new BehaviorStack(this.options.maxStackLength);
             this.eventTracker();
         }
         //默认设置
         initDef() {
-            // 重写赋值
             return {
                 PI: true,
                 OI: true,
-                RCR: true,
-                DBR: true,
+                RouterChange: true,
+                Dom: true,
                 HT: true,
                 BS: true,
-                PV: true,
-                elementTrackedList: ['button', 'div'],
-                classTrackedList: ['tracked'],
+                pageInfo: true,
+                elementTrackList: ['button'],
+                attributeTrackList: 'target-key',
                 MouseEventList: ['click'],
-                maxBehaviorRecords: 100,
+                maxStackLength: 100,
             };
         }
         eventTracker() {
-            this.BlankScreen();
-            this.RouterChange();
-            this.pageData();
+            if (this.options.RouterChange) {
+                this.RouterChange();
+            }
+            if (this.options.pageInfo) {
+                this.pageData();
+            }
+            if (this.options.Dom) {
+                this.Dom();
+            }
         }
-        BlankScreen() {
-            new BlankScreenTracker(this.reportTracker);
-        }
+        /**
+         * dom
+         *
+         */
         Dom() {
-            // targetKeyReport(this.reportTracker);
-            targetKeyReport((e, event) => {
-                const domData = {
-                    // tagInfo: {
-                    //     id: target.id,
-                    //     classList: Array.from(target.classList),
-                    //     tagName: target.tagName,
-                    //     text: target.textContent,
-                    //   },
-                    pageInfo: PageInformation(),
-                    time: new Date().getTime(),
-                    timeFormat: utcFormat(new Date().getTime()),
-                };
-                this.data[Data.DomDataList].push(domData);
+            domTracker((e, event) => {
+                var _a, _b;
                 const target = e.target;
-                const targetKey = target.getAttribute('target-key');
-                // 看dom上有没有这个属性，如果有就进行上报
-                if (targetKey) {
+                const targetKey = target.getAttribute(this.options.attributeTrackList);
+                let isElementTrack = this.options.elementTrackList.includes((_b = (_a = event.target) === null || _a === void 0 ? void 0 : _a.tagName) === null || _b === void 0 ? void 0 : _b.toLocaleLowerCase())
+                    ? event.target
+                    : undefined;
+                if (isElementTrack) {
+                    const domData = {
+                        tagInfo: {
+                            id: target.id,
+                            classList: Array.from(target.classList),
+                            tagName: target.tagName,
+                            text: target.textContent,
+                        },
+                        pageInfo: PageInformationTracker(),
+                        time: new Date().getTime(),
+                        timeFormat: utcFormat(new Date().getTime()),
+                    };
+                    if (this.data[Data$1.Dom])
+                        this.data[Data$1.Dom].push(domData);
+                    else
+                        this.data[Data$1.Dom] = [domData];
+                    // 添加到行为栈中
+                    const hehaviorStackData = {
+                        name: event,
+                        pathname: PageInformationTracker().pathname,
+                        value: {
+                            tagInfo: {
+                                id: target.id,
+                                classList: Array.from(target.classList),
+                                tagName: target.tagName,
+                                text: target.textContent,
+                            },
+                            pageInfo: PageInformationTracker(),
+                        },
+                        time: new Date().getTime(),
+                        timeFormat: utcFormat(new Date().getTime()),
+                    };
+                    this.behaviorStack.set(hehaviorStackData);
+                }
+                else if (targetKey) {
                     this.reportTracker({
                         kind: 'stability',
                         trackerType: 'domTracker',
                         event,
                         targetKey,
-                        // selector:e? getSelector(e) : '' //代表最后一个操作的元素
                     });
                 }
             }, this.options.MouseEventList);
         }
+        /**
+         * router监控
+         *
+         */
         RouterChange() {
-            trackRouterChange((e) => {
+            RouterChangeTracker((e) => {
                 const routerData = {
                     routerType: e.type,
-                    pageInfo: PageInformation(),
+                    pageInfo: PageInformationTracker(),
                     time: new Date().getTime(),
                     timeFormat: utcFormat(new Date().getTime()),
                 };
-                this.data[Data.RouterChangeList].push(routerData);
+                if (this.data[Data$1.RouterChange])
+                    this.data[Data$1.RouterChange].push(routerData);
+                else
+                    this.data[Data$1.RouterChange] = [routerData];
                 const hehaviorStackData = {
                     name: 'RouterChange',
-                    page: PageInformation().pathname,
+                    pathname: PageInformationTracker().pathname,
                     value: {
                         Type: e.type,
                     },
                     time: new Date().getTime(),
                     timeFormat: utcFormat(new Date().getTime()),
                 };
-                this.hehaviorStackDataList.push(hehaviorStackData);
+                this.behaviorStack.set(hehaviorStackData);
                 // 当路由发生变化就重新上报页面数据
                 this.pageData();
             });
         }
+        /**
+         * 页面信息
+         *
+         */
         pageData() {
             const pageData = {
-                pageInformation: PageInformation(),
-                originInformation: OriginInformation(),
+                pageInformation: PageInformationTracker(),
+                originInformation: OriginInformationTracker(),
             };
-            this.data[Data.PageInformation] = PageInformation(),
-                this.data[Data.OriginInformation] = OriginInformation(),
-                this.reportTracker(pageData);
+            this.data[Data$1.PageInfo] = pageData;
+            this.reportTracker(pageData);
         }
     }
 
@@ -3564,16 +3556,97 @@
         };
     }
 
-    class ErrorTracker {
+    class BlankScreenTracker {
         constructor(reportTracker) {
             this.reportTracker = reportTracker;
+            this.emptyPoint = 0;
+            this.load();
+            // this.element()
+        }
+        load() {
+            // 页面状态为complete才进行
+            if (document.readyState === 'complete') {
+                this.element();
+            }
+            else {
+                window.addEventListener('load', () => {
+                    this.element();
+                    if (this.emptyPoint > 8) {
+                        let centerElement = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
+                        this.reportTracker({
+                            kind: 'userAction',
+                            trackerType: 'blank',
+                            emptyPoint: this.emptyPoint,
+                            screen: window.screen.width + 'X' + window.screen.height,
+                            viewPoint: window.innerWidth + 'X' + window.innerHeight,
+                            selector: this.getSelector(centerElement), //放中间元素
+                        });
+                    }
+                });
+            }
+        }
+        element() {
+            for (let i = 0; i < 9; i++) {
+                let XElement = document.elementFromPoint((window.innerWidth * i) / 10, window.innerHeight / 2);
+                let YElement = document.elementFromPoint(window.innerWidth / 2, (window.innerHeight * i) / 10);
+                this.isWrapper(XElement);
+                this.isWrapper(YElement);
+            }
+        }
+        /**
+       * 判断是否白点
+       */
+        isWrapper(element) {
+            let WrapperElement = ['html', 'body', '#container', '.content'];
+            let selector = this.getSelector(element);
+            if (WrapperElement.indexOf(selector) != -1) {
+                this.emptyPoint++;
+            }
+        }
+        getSelector(element) {
+            if (element === null || element === void 0 ? void 0 : element.id) {
+                return '#' + element.id;
+            }
+            else if (element === null || element === void 0 ? void 0 : element.className) {
+                // 处理一个dom上面class可能多个的问题
+                let className = element.className
+                    .split(' ')
+                    .filter((item) => !!item)
+                    .join('.');
+                return '.' + className;
+            }
+            else {
+                return element === null || element === void 0 ? void 0 : element.nodeName.toLowerCase();
+            }
+        }
+    }
+
+    class ErrorTracker {
+        constructor(options, reportTracker) {
+            this.reportTracker = reportTracker;
+            this.options = Object.assign(this.initDef(), options);
             this.errorEvent();
         }
         errorEvent() {
-            this.jsError();
-            this.resourceError();
-            this.promiseError();
-            this.httpError();
+            if (this.options.js)
+                this.jsError();
+            if (this.options.http)
+                this.httpError();
+            if (this.options.promise)
+                this.promiseError();
+            if (this.options.resource)
+                this.resourceError();
+            if (this.options.BlankScreen)
+                this.BlankScreen();
+        }
+        //默认设置
+        initDef() {
+            return {
+                performance: true,
+                cache: true,
+                loading: true,
+                resourceFlow: true,
+            };
         }
         /**
          * error of common js
@@ -3661,6 +3734,13 @@
             xhrTracker(handler);
         }
         /**
+         * 白屏监控
+         *
+         */
+        BlankScreen() {
+            new BlankScreenTracker(this.reportTracker);
+        }
+        /**
          * 拼接stack
          * @param stack
          * @returns
@@ -3672,47 +3752,7 @@
                 .map((item) => item.replace(/^\s+at\s+/g, ''))
                 .join('^');
         }
-        getExtraData() {
-            return {
-                title: document.title,
-                // url: Location.url,
-                timestamp: Date.now(),
-                // userAgent:userAgent.parse(navigator,userAgent).name
-            };
-        }
     }
-
-    /******************************************************************************
-    Copyright (c) Microsoft Corporation.
-
-    Permission to use, copy, modify, and/or distribute this software for any
-    purpose with or without fee is hereby granted.
-
-    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-    PERFORMANCE OF THIS SOFTWARE.
-    ***************************************************************************** */
-    /* global Reflect, Promise, SuppressedError, Symbol */
-
-
-    function __awaiter(thisArg, _arguments, P, generator) {
-        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-        return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-            step((generator = generator.apply(thisArg, _arguments || [])).next());
-        });
-    }
-
-    typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
-        var e = new Error(message);
-        return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
-    };
 
     function resourceFlow() {
         const resouceDatas = performance.getEntriesByType('resource');
@@ -3804,6 +3844,13 @@
         MetricData["FID"] = "FID";
         MetricData["CLS"] = "CLS";
     })(MetricData || (MetricData = {}));
+    var Data;
+    (function (Data) {
+        Data["performance"] = "performance";
+        Data["cache"] = "cache";
+        Data["loading"] = "loading";
+        Data["resourceFlow"] = "resourceFlow";
+    })(Data || (Data = {}));
 
     function WebVitals(callback) {
         let data = {};
@@ -3869,41 +3916,55 @@
     }
 
     class PerformanceTracker {
-        constructor(reportTracker) {
+        constructor(options, reportTracker) {
+            this.options = Object.assign(this.initDef(), options);
+            this.data = {};
             this.reportTracker = reportTracker;
             this.performanceEvent();
         }
         performanceEvent() {
-            this.getResouceFlow();
-            this.getloading();
-            this.getWebVitals();
-            this.getCache();
-            // this.reportPerformance();
+            if (this.options.loading)
+                this.getloading();
+            if (this.options.cache)
+                this.getCache();
+            if (this.options.resourceFlow)
+                this.getResouceFlow();
+            if (this.options.performance)
+                this.getWebVitals();
+            this.reportPerformance();
+        }
+        //默认设置
+        initDef() {
+            return {
+                performance: true,
+                cache: true,
+                loading: true,
+                resourceFlow: true
+            };
         }
         /**
          * 获取dom流
          *
          */
         getResouceFlow() {
-            this.resouceFlowData = resourceFlow();
+            this.data[Data.resourceFlow] = resourceFlow();
         }
         /**
          * 获取各类loading时间
          *
          */
         getloading() {
-            this.loadingData = loadingData();
+            this.data[Data.loading] = loadingData();
         }
         /**
          * 获取WebVitals指标
          *
          */
         getWebVitals() {
-            return __awaiter(this, void 0, void 0, function* () {
-                WebVitals((data) => {
-                    this.webVitalData = data;
-                    this.reportPerformance();
-                });
+            WebVitals((data) => {
+                this.data[Data.performance] = data;
+                console.log("全部回调完成");
+                this.reportPerformance();
             });
         }
         /**
@@ -3911,17 +3972,10 @@
          *
          */
         getCache() {
-            this.catchData = cache();
+            this.data[Data.cache] = cache();
         }
         reportPerformance() {
-            // 将所有数据集中起来
-            this.performanceData = {
-                catchData: this.catchData,
-                loadingData: this.loadingData,
-                resouceFlowData: this.resouceFlowData,
-                webVitalData: this.webVitalData,
-            };
-            this.reportTracker(this.performanceData);
+            this.reportTracker(this.data);
         }
     }
 
@@ -3976,17 +4030,17 @@
                 this.captureEvents(['hashchange'], 'hash-pv');
             }
             if (this.options.Error) {
-                new ErrorTracker(this.reportTracker.bind(this));
+                this.error = new ErrorTracker({}, this.reportTracker.bind(this));
             }
             if (this.options.userAction) {
-                this.userAction = new userAction(this.reportTracker.bind(this));
+                this.userAction = new userAction({}, this.reportTracker.bind(this));
                 // userActionTrackerClass.eventTracker();
                 // if (this.options.domTracker) {
                 //   userActionTrackerClass.Dom();
                 // }
             }
             if (this.options.performance) {
-                this.performance = new PerformanceTracker(this.reportTracker.bind(this));
+                this.performance = new PerformanceTracker({}, this.reportTracker.bind(this));
             }
         }
         /**

@@ -1,5 +1,4 @@
-import { ReportTracker } from '../types/error';
-export function targetKeyReport(handler: (...args: any[]) => any,eventTrackedList:string[]) {
+export function domTracker(handler: (...args: any[]) => any,eventTrackedList:string[]) {
   // 需要监听的事件
   const MouseEventList: string[] = eventTrackedList
   MouseEventList.forEach((event) => {

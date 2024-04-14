@@ -44,33 +44,34 @@ export interface RouterData {
   timeFormat: string;
 }
 
-export interface HehaviorStackData {
+export interface BehaviorStackData {
   name: string;
-  page: string;
-  value: {
-    Type: any;
-  };
+  pathname: string;
+  value: any
   time: number;
   timeFormat: string;
 }
 
-export interface Options {
+export interface DefaultOptions {
   PI: Boolean;
   OI: Boolean;
-  RCR: Boolean;
-  DBR: Boolean;
+  RouterChange: Boolean;
+  Dom: Boolean;
   HT: Boolean;
   BS: Boolean;
-  PV: Boolean;
-  elementTrackedList: Array<string>;
-  classTrackedList:  Array<string>;
+  pageInfo: Boolean;
+  elementTrackList:  Array<string>;
+  attributeTrackList: string;
   MouseEventList:  Array<string>;
-  maxBehaviorRecords: number;
+  maxStackLength: number;
+}
+
+export interface Options extends Partial<DefaultOptions> {//把上面的一些变成非必填
+  
 }
 
 export enum Data{
-  DomDataList = "DomDataList",
-  RouterChangeList = "RouterChangeList",
-  PageInformation = "PageInformation",
-  OriginInformation = "OriginInformation"
+  Dom = "DomDataList",
+  RouterChange = "RouterChangeData",
+  PageInfo = 'PageInfo'
 }

@@ -16,8 +16,9 @@ export default class Tracker {
   private appId: string;
   private options: Options;
   private aliyunOptions?: aliyunParams;
-  private performance:PerformanceTracker
-  private userAction:userAction
+  private performance: PerformanceTracker;
+  private userAction: userAction;
+  private error:ErrorTracker
   // private userAgent
   constructor(options: Options, aliyunOptions?: aliyunParams) {
     this.options = Object.assign(this.initDef(), options);
@@ -75,19 +76,20 @@ export default class Tracker {
       this.captureEvents(['hashchange'], 'hash-pv');
     }
     if (this.options.Error) {
-      new ErrorTracker(this.reportTracker.bind(this));
+      this.error = new ErrorTracker({},this.reportTracker.bind(this));
     }
     if (this.options.userAction) {
-      this.userAction = new userAction(
-        this.reportTracker.bind(this),
-      );
+      this.userAction = new userAction({}, this.reportTracker.bind(this));
       // userActionTrackerClass.eventTracker();
       // if (this.options.domTracker) {
       //   userActionTrackerClass.Dom();
       // }
     }
     if (this.options.performance) {
-      this.performance =  new PerformanceTracker(this.reportTracker.bind(this));
+      this.performance = new PerformanceTracker(
+        {},
+        this.reportTracker.bind(this),
+      );
     }
   }
   /**

@@ -1,111 +1,158 @@
-import { BlankScreenTracker } from './BlankScreen';
 import { ReportTracker } from '../types/error';
-import { targetKeyReport } from './Dom';
-import { trackRouterChange } from './RouterChange';
-import { OriginInformation } from './originInformation';
-import { PageInformation } from './pageInformation';
+import { domTracker } from './Dom';
+import { RouterChangeTracker } from './RouterChange';
+import { OriginInformationTracker } from './originInformation';
+import { PageInformationTracker } from './pageInformation';
 import { utcFormat } from '../utils/timeFormat';
+import {BehaviorStack} from './behaviorStack'
 
-import { HehaviorStackData, Options, RouterData,Data } from '../types/userAction';
+import {
+  BehaviorStackData,
+  Options,
+  RouterData,
+  Data,
+} from '../types/userAction';
 export class userAction {
   private options: Options;
-  private data: Record< Data | string, Record<string, any>>;
-  private hehaviorStackDataList: Array<HehaviorStackData>;
+  private data: Record<Data | string, Record<string, any>>;
   private reportTracker: ReportTracker;
-  constructor(reportTracker: ReportTracker) {
-    this.options = this.initDef();
-    this.data = {}
+  private behaviorStack:BehaviorStack
+  constructor(options: Options, reportTracker: ReportTracker) {
+    this.options = Object.assign(this.initDef(), options);
+    this.data = {};
     this.reportTracker = reportTracker;
-
-
+    this.behaviorStack = new BehaviorStack(this.options.maxStackLength)
     this.eventTracker();
   }
-
   //默认设置
   private initDef() {
-    // 重写赋值
     return {
       PI: true,
       OI: true,
-      RCR: true,
-      DBR: true,
+      RouterChange: true,
+      Dom: true,
       HT: true,
       BS: true,
-      PV: true,
-      elementTrackedList: ['button', 'div'],
-      classTrackedList: ['tracked'],
+      pageInfo: true,
+      elementTrackList: ['button'],
+      attributeTrackList: 'target-key',
       MouseEventList: ['click'],
-      maxBehaviorRecords: 100,
+      maxStackLength: 100,
     };
   }
   public eventTracker() {
-    this.BlankScreen();
-    this.RouterChange();
-    this.pageData();
+    if (this.options.RouterChange) {
+      this.RouterChange();
+    }
+    if (this.options.pageInfo) {
+      this.pageData();
+    }
+    if (this.options.Dom) {
+      this.Dom();
+    }
   }
-  public BlankScreen() {
-    new BlankScreenTracker(this.reportTracker);
-  }
-  public Dom() {
-    // targetKeyReport(this.reportTracker);
-    targetKeyReport((e, event) => {
-      const domData = {
-        // tagInfo: {
-        //     id: target.id,
-        //     classList: Array.from(target.classList),
-        //     tagName: target.tagName,
-        //     text: target.textContent,
-        //   },
-        pageInfo: PageInformation(),
-        time: new Date().getTime(),
-        timeFormat: utcFormat(new Date().getTime()),
-      };
-      this.data[Data.DomDataList].push(domData);
 
+  /**
+   * dom
+   *
+   */
+  public Dom() {
+    domTracker((e, event) => {
       const target = e.target as HTMLElement;
-      const targetKey = target.getAttribute('target-key');
-      // 看dom上有没有这个属性，如果有就进行上报
-      if (targetKey) {
+      const targetKey = target.getAttribute(this.options.attributeTrackList);
+      let isElementTrack = this.options.elementTrackList.includes(
+        (event.target as HTMLElement)?.tagName?.toLocaleLowerCase(),
+      )
+        ? (event.target as HTMLElement)
+        : undefined;
+      if (isElementTrack) {
+        const domData = {
+          tagInfo: {
+            id: target.id,
+            classList: Array.from(target.classList),
+            tagName: target.tagName,
+            text: target.textContent,
+          },
+          pageInfo: PageInformationTracker(),
+          time: new Date().getTime(),
+          timeFormat: utcFormat(new Date().getTime()),
+        };
+
+        if (this.data[Data.Dom]) this.data[Data.Dom].push(domData);
+        else this.data[Data.Dom] = [domData];
+
+        // 添加到行为栈中
+        const hehaviorStackData: BehaviorStackData = {
+          name: event,
+          pathname: PageInformationTracker().pathname,
+          value: {
+            tagInfo: {
+              id: target.id,
+              classList: Array.from(target.classList),
+              tagName: target.tagName,
+              text: target.textContent,
+            },
+            pageInfo: PageInformationTracker(),
+          },
+          time: new Date().getTime(),
+          timeFormat: utcFormat(new Date().getTime()),
+        };
+        this.behaviorStack.set(hehaviorStackData);
+      } else if (targetKey) {
         this.reportTracker({
           kind: 'stability',
           trackerType: 'domTracker',
           event,
           targetKey,
-          // selector:e? getSelector(e) : '' //代表最后一个操作的元素
         });
       }
     }, this.options.MouseEventList);
   }
+  /**
+   * router监控
+   *
+   */
   public RouterChange() {
-    trackRouterChange((e) => {
+    RouterChangeTracker((e) => {
       const routerData: RouterData = {
         routerType: e.type,
-        pageInfo: PageInformation(),
+        pageInfo: PageInformationTracker(),
         time: new Date().getTime(),
         timeFormat: utcFormat(new Date().getTime()),
       };
-      this.data[Data.RouterChangeList].push(routerData);
-      const hehaviorStackData: HehaviorStackData = {
+      if (this.data[Data.RouterChange]) this.data[Data.RouterChange].push(routerData);
+      else this.data[Data.RouterChange] = [routerData];
+
+
+      const hehaviorStackData: BehaviorStackData = {
         name: 'RouterChange',
-        page: PageInformation().pathname,
-        value: {    
+        pathname: PageInformationTracker().pathname,
+        value: {
           Type: e.type,
         },
         time: new Date().getTime(),
         timeFormat: utcFormat(new Date().getTime()),
       };
-      this.hehaviorStackDataList.push(hehaviorStackData);
+      this.behaviorStack.set(hehaviorStackData);
       // 当路由发生变化就重新上报页面数据
       this.pageData();
     });
   }
+  /**
+   * 页面信息
+   *
+   */
   public pageData() {
     const pageData = {
-      pageInformation: PageInformation(),
-      originInformation: OriginInformation(),
+      pageInformation: PageInformationTracker(),
+      originInformation: OriginInformationTracker(),
     };
-    this.data[Data.PageInformation] = PageInformation(),
-    this.data[Data.OriginInformation] = OriginInformation(),
+    this.data[Data.PageInfo] = pageData;
     this.reportTracker(pageData);
   }
+
+  /**
+   * ajax请求
+   *
+   */
 }

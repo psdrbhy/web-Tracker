@@ -1,18 +1,33 @@
 import { ReportTracker } from '../types/error';
 import { XhrTrackerData } from '../types/AjaxXhr';
 import xhrTracker from '../userAction/AjaxXhr';
+import { BlankScreenTracker } from '../userAction/BlankScreen';
+import { Options } from '../types/error';
 export default class ErrorTracker {
   private reportTracker: ReportTracker;
-  constructor(reportTracker: ReportTracker) {
+  private options: Options;
+  constructor(options:Options, reportTracker: ReportTracker) {
     this.reportTracker = reportTracker;
+    this.options = Object.assign(this.initDef(), options);
     this.errorEvent();
   }
 
   public errorEvent() {
-    this.jsError();
-    this.resourceError();
-    this.promiseError();
-    this.httpError();
+    if (this.options.js) this.jsError();
+    if (this.options.http) this.httpError();
+    if (this.options.promise) this.promiseError();
+    if (this.options.resource) this.resourceError();
+    if (this.options.BlankScreen) this.BlankScreen();
+  }
+
+  //默认设置
+  private initDef() {
+    return {
+      performance: true,
+      cache: true,
+      loading: true,
+      resourceFlow: true,
+    };
   }
   /**
    * error of common js
@@ -111,7 +126,13 @@ export default class ErrorTracker {
     };
     xhrTracker(handler);
   }
-
+  /**
+   * 白屏监控
+   *
+   */
+  public BlankScreen() {
+    new BlankScreenTracker(this.reportTracker);
+  }
   /**
    * 拼接stack
    * @param stack
@@ -125,12 +146,4 @@ export default class ErrorTracker {
       .join('^');
   }
 
-  public getExtraData() {
-    return {
-      title: document.title,
-      // url: Location.url,
-      timestamp: Date.now(),
-      // userAgent:userAgent.parse(navigator,userAgent).name
-    };
-  }
 }
