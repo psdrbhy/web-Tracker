@@ -74,7 +74,10 @@ export default class PerformanceTracker {
   public getCache() {
     this.data[Data.cache] = cache();
   }
-
+    /**
+   * 整体data进行上报
+   *
+   */
   public reportPerformance() {
     this.reportTracker(this.data)
   }

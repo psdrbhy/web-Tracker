@@ -1,5 +1,5 @@
-import { XMLHttpRequestWithLogData, XhrTrackerData } from '../types/AjaxXhr';
-export default function xhrTracker(handlerReport: any) {
+import { XMLHttpRequestWithLogData, XhrTrackerData } from '../types/userAction';
+export function xhrTracker(handler: (...args: any[]) => any) {
   let XMLHttpRequest = window.XMLHttpRequest;
   // 对XHR上面的方法进行重写
   let oldOpen = XMLHttpRequest.prototype.open;
@@ -15,27 +15,27 @@ export default function xhrTracker(handlerReport: any) {
   let oldSend = XMLHttpRequest.prototype.send;
   XMLHttpRequest.prototype.send = function (body: any) {
     if ((this as XMLHttpRequestWithLogData).logData) {
-      let startTime = Date.now();
-      let handler = (type: string) =>  (event:Event) => {
-        let duration = Date.now() - startTime;
-        let status = this.status;
-        let statusText = this.statusText;
-        let data: XhrTrackerData = {
-          trackerType: 'xhrError',
-          eventType: event.type,
-          method: (this as XMLHttpRequestWithLogData).logData.method,
-          url: (this as XMLHttpRequestWithLogData).logData.url,
-          status: status,
-          statusText: statusText,
-          duration: duration,
-          response: this.response ? JSON.stringify(this.response) : '',
-          params: body || '',
-        };
-         handlerReport(data);
-      };
-      this.addEventListener('error', handler('error'), false);
-      this.addEventListener('load', handler('load'), false);
-      this.addEventListener('abort', handler('abort'), false);
+      // let startTime = Date.now();
+      // let handler = (type: string) =>  (event:Event) => {
+      //   let duration = Date.now() - startTime;
+      //   let status = this.status;
+      //   let statusText = this.statusText;
+      //   let data: XhrTrackerData = {
+      //     trackerType: 'xhrError',
+      //     eventType: event.type,
+      //     method: (this as XMLHttpRequestWithLogData).logData.method,
+      //     url: (this as XMLHttpRequestWithLogData).logData.url,
+      //     status: status,
+      //     statusText: statusText,
+      //     duration: duration,
+      //     response: this.response ? JSON.stringify(this.response) : '',
+      //     params: body || '',
+      //   };
+      //    handlerReport(data);
+      // };
+      this.addEventListener('error', handler('error',body), false);
+      this.addEventListener('load', handler('load',body), false);
+      this.addEventListener('abort', handler('abort',body), false);
     }
     return oldSend.call (this, body);
   };

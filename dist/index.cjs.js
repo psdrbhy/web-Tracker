@@ -3510,6 +3510,12 @@ class userAction {
         this.data[Data$1.PageInfo] = pageData;
         this.reportTracker(pageData);
     }
+    /**
+     * ajax请求
+     *
+     */
+    AjaxXhr() {
+    }
 }
 
 function xhrTracker(handlerReport) {

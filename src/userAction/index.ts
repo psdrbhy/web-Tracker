@@ -1,39 +1,41 @@
 import { ReportTracker } from '../types/error';
 import { domTracker } from './Dom';
+import { xhrTracker } from './AjaxXhr';
 import { RouterChangeTracker } from './RouterChange';
 import { OriginInformationTracker } from './originInformation';
 import { PageInformationTracker } from './pageInformation';
 import { utcFormat } from '../utils/timeFormat';
-import {BehaviorStack} from './behaviorStack'
+import { BehaviorStack } from './behaviorStack';
 
 import {
   BehaviorStackData,
   Options,
   RouterData,
   Data,
+  XhrTrackerData,
+  XMLHttpRequestWithLogData,
 } from '../types/userAction';
 export class userAction {
   private options: Options;
   private data: Record<Data | string, Record<string, any>>;
   private reportTracker: ReportTracker;
-  private behaviorStack:BehaviorStack
+  private behaviorStack: BehaviorStack;
   constructor(options: Options, reportTracker: ReportTracker) {
     this.options = Object.assign(this.initDef(), options);
     this.data = {};
     this.reportTracker = reportTracker;
-    this.behaviorStack = new BehaviorStack(this.options.maxStackLength)
+    this.behaviorStack = new BehaviorStack(this.options.maxStackLength);
     this.eventTracker();
   }
   //默认设置
   private initDef() {
     return {
-      PI: true,
-      OI: true,
-      RouterChange: true,
+
       Dom: true,
-      HT: true,
-      BS: true,
+      Xhr: true,
       pageInfo: true,
+      behaviorStack: true,
+      RouterChange: true,
       elementTrackList: ['button'],
       attributeTrackList: 'target-key',
       MouseEventList: ['click'],
@@ -49,6 +51,9 @@ export class userAction {
     }
     if (this.options.Dom) {
       this.Dom();
+    }
+    if (this.options.Xhr) {
+      this.AjaxXhr();
     }
   }
 
@@ -120,9 +125,9 @@ export class userAction {
         time: new Date().getTime(),
         timeFormat: utcFormat(new Date().getTime()),
       };
-      if (this.data[Data.RouterChange]) this.data[Data.RouterChange].push(routerData);
+      if (this.data[Data.RouterChange])
+        this.data[Data.RouterChange].push(routerData);
       else this.data[Data.RouterChange] = [routerData];
-
 
       const hehaviorStackData: BehaviorStackData = {
         name: 'RouterChange',
@@ -155,4 +160,51 @@ export class userAction {
    * ajax请求
    *
    */
+  public AjaxXhr() {
+    xhrTracker(function (event, body) {
+      let startTime = Date.now();
+      let duration = Date.now() - startTime;
+      let status = this.status;
+      let statusText = this.statusText;
+      let data: XhrTrackerData = {
+        trackerType: 'xhrError',
+        eventType: event.type,
+        method: (this as XMLHttpRequestWithLogData).logData.method,
+        url: (this as XMLHttpRequestWithLogData).logData.url,
+        status: status,
+        statusText: statusText,
+        duration: duration,
+        response: this.response ? JSON.stringify(this.response) : '',
+        params: body || '',
+      };
+      if (this.data[Data.Xhr]) this.data[Data.Xhr].push(data);
+      else this.data[Data.Xhr] = [data];
+
+      const hehaviorStackData: BehaviorStackData = {
+        name: 'RouterChange',
+        pathname: PageInformationTracker().pathname,
+        value: {
+          Type: event.type,
+          method: (this as XMLHttpRequestWithLogData).logData.method,
+          url: (this as XMLHttpRequestWithLogData).logData.url,
+          response: this.response ? JSON.stringify(this.response) : '',
+          params: body || '',
+        },
+        time: new Date().getTime(),
+        timeFormat: utcFormat(new Date().getTime()),
+      };
+      this.behaviorStack.set(hehaviorStackData);
+    });
+  }
+
+  /**
+   * 整体data进行上报
+   *
+   */
+  public reportActions() {
+    this.reportTracker(this.data);
+    if(this.options.behaviorStack){
+      this.reportTracker(this.behaviorStack.get());
+    }
+  }
 }
