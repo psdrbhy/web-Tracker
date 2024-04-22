@@ -33,9 +33,9 @@ export function xhrTracker(handler: (...args: any[]) => any) {
       //   };
       //    handlerReport(data);
       // };
-      this.addEventListener('error', handler('error',body), false);
-      this.addEventListener('load', handler('load',body), false);
-      this.addEventListener('abort', handler('abort',body), false);
+      this.addEventListener('error', handler('error',body,this), false);
+      this.addEventListener('load', handler('load',body,this), false);
+      this.addEventListener('abort', handler('abort',body,this), false);
     }
     return oldSend.call (this, body);
   };

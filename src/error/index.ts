@@ -1,12 +1,12 @@
 import { ReportTracker } from '../types/error';
-import { XhrTrackerData } from '../types/AjaxXhr';
-import xhrTracker from '../userAction/AjaxXhr';
+import { XhrTrackerData } from '../types/userAction';
+import {xhrTracker} from '../userAction/AjaxXhr';
 import { BlankScreenTracker } from '../userAction/BlankScreen';
 import { Options } from '../types/error';
 export default class ErrorTracker {
   private reportTracker: ReportTracker;
   private options: Options;
-  constructor(options:Options, reportTracker: ReportTracker) {
+  constructor(options?:Options, reportTracker?: ReportTracker) {
     this.reportTracker = reportTracker;
     this.options = Object.assign(this.initDef(), options);
     this.errorEvent();
@@ -23,10 +23,11 @@ export default class ErrorTracker {
   //默认设置
   private initDef() {
     return {
-      performance: true,
-      cache: true,
-      loading: true,
-      resourceFlow: true,
+      js: true,
+      http: true,
+      promise: true,
+      resource: true,
+      BlankScreen:true,
     };
   }
   /**
@@ -116,16 +117,11 @@ export default class ErrorTracker {
    * error of Http
    */
   private httpError() {
-    const handler = (xhrTrackerData: XhrTrackerData) => {
-      // 大于400才进行上报
-      if (xhrTrackerData.status < 400) return;
-      this.reportTracker({
-        kind: 'error',
-        ...xhrTrackerData,
-      });
-    };
-    xhrTracker(handler);
+
+    // xhrTracker(this.handler);
   }
+
+
   /**
    * 白屏监控
    *
@@ -145,5 +141,14 @@ export default class ErrorTracker {
       .map((item) => item.replace(/^\s+at\s+/g, ''))
       .join('^');
   }
+
+  public handler = (xhrTrackerData: XhrTrackerData) => {
+    // 大于400才进行上报
+    if (xhrTrackerData.status < 400) return;
+    this.reportTracker({
+      kind: 'error',
+      ...xhrTrackerData,
+    });
+  };
 
 }

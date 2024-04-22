@@ -4,8 +4,10 @@ export class BehaviorStack {
     private readonly maxStackLength:number
     constructor(maxStackLength:number){
         this.maxStackLength =  maxStackLength
+        this.behaviorStackList = []
     }
     set(data:BehaviorStackData){
+        console.log(this.behaviorStackList,"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm")
         if(this.behaviorStackList.length == this.maxStackLength) {
             this.behaviorStackList.shift()
         }

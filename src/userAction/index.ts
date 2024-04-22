@@ -6,6 +6,7 @@ import { OriginInformationTracker } from './originInformation';
 import { PageInformationTracker } from './pageInformation';
 import { utcFormat } from '../utils/timeFormat';
 import { BehaviorStack } from './behaviorStack';
+import ErrorTracker from '../error/index'
 
 import {
   BehaviorStackData,
@@ -20,12 +21,14 @@ export class userAction {
   private data: Record<Data | string, Record<string, any>>;
   private reportTracker: ReportTracker;
   private behaviorStack: BehaviorStack;
+  private xhrHander:any
   constructor(options: Options, reportTracker: ReportTracker) {
     this.options = Object.assign(this.initDef(), options);
     this.data = {};
     this.reportTracker = reportTracker;
     this.behaviorStack = new BehaviorStack(this.options.maxStackLength);
     this.eventTracker();
+    this.xhrHander = (new ErrorTracker({},this.reportTracker)).handler
   }
   //默认设置
   private initDef() {
@@ -102,6 +105,7 @@ export class userAction {
           time: new Date().getTime(),
           timeFormat: utcFormat(new Date().getTime()),
         };
+
         this.behaviorStack.set(hehaviorStackData);
       } else if (targetKey) {
         this.reportTracker({
@@ -161,33 +165,34 @@ export class userAction {
    *
    */
   public AjaxXhr() {
-    xhrTracker(function (event, body) {
+    xhrTracker((event, body,that)=> {
       let startTime = Date.now();
       let duration = Date.now() - startTime;
-      let status = this.status;
-      let statusText = this.statusText;
+      let status = that.status;
+      let statusText = that.statusText;
       let data: XhrTrackerData = {
         trackerType: 'xhrError',
-        eventType: event.type,
-        method: (this as XMLHttpRequestWithLogData).logData.method,
-        url: (this as XMLHttpRequestWithLogData).logData.url,
+        eventType: event,
+        method: (that as XMLHttpRequestWithLogData).logData.method,
+        url: (that as XMLHttpRequestWithLogData).logData.url,
         status: status,
         statusText: statusText,
         duration: duration,
-        response: this.response ? JSON.stringify(this.response) : '',
+        response: that.response ? JSON.stringify(that.response) : '',
         params: body || '',
       };
+      this.xhrHander(data)
       if (this.data[Data.Xhr]) this.data[Data.Xhr].push(data);
       else this.data[Data.Xhr] = [data];
 
       const hehaviorStackData: BehaviorStackData = {
-        name: 'RouterChange',
+        name: 'AjaxXhr',
         pathname: PageInformationTracker().pathname,
         value: {
           Type: event.type,
-          method: (this as XMLHttpRequestWithLogData).logData.method,
-          url: (this as XMLHttpRequestWithLogData).logData.url,
-          response: this.response ? JSON.stringify(this.response) : '',
+          method: (that as XMLHttpRequestWithLogData).logData.method,
+          url: (that as XMLHttpRequestWithLogData).logData.url,
+          response: that.response ? JSON.stringify(that.response) : '',
           params: body || '',
         },
         time: new Date().getTime(),
