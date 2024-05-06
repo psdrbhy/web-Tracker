@@ -7,7 +7,6 @@ import {
 } from '../types/core';
 import { createHistoryEvent } from '../utils/pv';
 import { utcFormat } from '../utils/timeFormat';
-// import { getPageInformation } from '../userAction/pageInformation';
 import getAliyun from '../utils/aliyun';
 import { userAction } from '../userAction';
 import ErrorTracker from '../error/index';
@@ -19,11 +18,9 @@ export default class Tracker {
   private performance: PerformanceTracker;
   private userAction: userAction;
   private error:ErrorTracker
-  // private userAgent
   constructor(options: Options, aliyunOptions?: aliyunParams) {
     this.options = Object.assign(this.initDef(), options);
     this.aliyunOptions = aliyunOptions;
-    // this.userAgent = getPageInformation()
     this.installTracker();
   }
   //默认设置
@@ -80,10 +77,6 @@ export default class Tracker {
     }
     if (this.options.userAction) {
       this.userAction = new userAction({}, this.reportTracker.bind(this));
-      // userActionTrackerClass.eventTracker();
-      // if (this.options.domTracker) {
-      //   userActionTrackerClass.Dom();
-      // }
     }
     if (this.options.performance) {
       this.performance = new PerformanceTracker(
@@ -106,8 +99,6 @@ export default class Tracker {
         userAgent: 'fds',
       },
     );
-    console.log(data, '传入的数据');
-    console.log(params, '添加了其他数据之后的params');
     // 发送到自己的后台
     let headers = {
       type: 'application/x-www-form-urlencoded',

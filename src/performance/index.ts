@@ -3,18 +3,9 @@ import { loadingData } from './loading';
 import { WebVitals } from './performance';
 import { cache } from './cache';
 import { type ReportTracker,Options,Data } from '../types/performance';
-import {
-  type ResourceFlow,
-  type LoadingData,
-  type CatchData,
-} from '../types/performance';
 export default class PerformanceTracker {
   private options:Options
   private data: Record<Data | string, Record<string, any>>;
-  private resourceFlowData: ResourceFlow[];
-  private loadingData: LoadingData;
-  private catchData: CatchData;
-  private webVitalData: Record<string, Record<string, any>>;
   private reportTracker: ReportTracker;
   constructor(options:Options,reportTracker: ReportTracker) {
     this.options = Object.assign(this.initDef(), options);
