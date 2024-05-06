@@ -25,65 +25,20 @@ export default class Tracker {
   }
   //默认设置
   private initDef(): DefaultOptions {
-    // 重写赋值
-    window.history['pushState'] = createHistoryEvent('pushState');
-    window.history['replaceState'] = createHistoryEvent('replaceState');
     return <DefaultOptions>{
       sdkVersion: TrackerConfig.version,
-      historyTracker: false,
-      hashTracker: false,
-      domTracker: false,
       Error: false,
       performance: false,
+      userAction:false
     };
-  }
-  /**
-   * 事件捕获器
-   * @param mouseEventList 事件列表
-   * @param targetKey 这个值是后台定的
-   * @param data
-   */
-  private captureEvents<T>(
-    mouseEventList: string[],
-    targetKey: string,
-    data?: T,
-  ) {
-    mouseEventList.forEach((event, index) => {
-      window.addEventListener(event, () => {
-        //一旦我们监听到我们就系统自动进行上报
-        this.reportTracker({
-          kind: 'stability',
-          trackerType: 'historyTracker',
-          event,
-          targetKey,
-          data,
-        });
-      });
-    });
   }
   //用来判断是否开启
   private installTracker() {
-    if (this.options.historyTracker) {
-      this.captureEvents(
-        ['pushState', 'replaceState', 'popstate'],
-        'history-pv',
-      );
-    }
-    if (this.options.hashTracker) {
-      this.captureEvents(['hashchange'], 'hash-pv');
-    }
-    if (this.options.Error) {
-      this.error = new ErrorTracker({},this.reportTracker.bind(this));
-    }
-    if (this.options.userAction) {
-      this.userAction = new userAction({}, this.reportTracker.bind(this));
-    }
-    if (this.options.performance) {
-      this.performance = new PerformanceTracker(
-        {},
-        this.reportTracker.bind(this),
-      );
-    }
+
+    if (this.options.Error) this.error = new ErrorTracker({},this.reportTracker.bind(this))
+    if (this.options.userAction) this.userAction = new userAction({}, this.reportTracker.bind(this))
+    if (this.options.performance) this.performance = new PerformanceTracker({},this.reportTracker.bind(this));
+    
   }
   /**
    * 上报监控数据给后台
@@ -96,7 +51,6 @@ export default class Tracker {
       { data },
       {
         currentTime: utcFormat(new Date().getTime()),
-        userAgent: 'fds',
       },
     );
     // 发送到自己的后台

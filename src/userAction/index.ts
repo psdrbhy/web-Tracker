@@ -46,18 +46,10 @@ export class userAction {
     };
   }
   public eventTracker() {
-    if (this.options.RouterChange) {
-      this.RouterChange();
-    }
-    if (this.options.pageInfo) {
-      this.pageData();
-    }
-    if (this.options.Dom) {
-      this.Dom();
-    }
-    if (this.options.Xhr) {
-      this.AjaxXhr();
-    }
+    if (this.options.RouterChange) this.RouterChange()
+    if (this.options.pageInfo) this.pageData()
+    if (this.options.Dom) this.Dom()
+    if (this.options.Xhr) this.AjaxXhr()
   }
 
   /**

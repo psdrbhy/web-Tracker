@@ -7,7 +7,6 @@ export class BehaviorStack {
         this.behaviorStackList = []
     }
     set(data:BehaviorStackData){
-        console.log(this.behaviorStackList,"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm")
         if(this.behaviorStackList.length == this.maxStackLength) {
             this.behaviorStackList.shift()
         }
