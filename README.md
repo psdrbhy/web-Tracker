@@ -31,7 +31,7 @@ eg:
       domTracker:true,
       Error:true
   },{
-      project:'aquan-tracker',
+      project:'aquan-tracker', 
       host:'cn-guangzhou.log.aliyuncs.com',
       logstore:'aquan-logstore'
   })

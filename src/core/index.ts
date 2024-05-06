@@ -5,7 +5,6 @@ import {
   ErrorParams,
   aliyunParams,
 } from '../types/core';
-import { createHistoryEvent } from '../utils/pv';
 import { utcFormat } from '../utils/timeFormat';
 import getAliyun from '../utils/aliyun';
 import { userAction } from '../userAction';
