@@ -127,7 +127,7 @@ export default class ErrorTracker {
    *
    */
   public BlankScreen() {
-    new BlankScreenTracker(this.reportTracker);
+    new BlankScreenTracker(this.reportTracker,false); //先定为false
   }
   /**
    * 拼接stack
